@@ -41,9 +41,9 @@ export default defineConfig({
       // field passes through to the emitted manifest.webmanifest; browsers
       // ignore unknown members.
       manifest: {
-        name: "Lavaman And Icegirl",
-        short_name: "Lavaman And Icegirl",
-        description: "Lavaman And Icegirl — free forever",
+        name: "fireboyandwatergirl",
+        short_name: "fireboyandwatergirl",
+        description: "fireboyandwatergirl — free forever",
         start_url: "/",
         display: "standalone",
         background_color: "#0f0f0f",
