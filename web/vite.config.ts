@@ -34,12 +34,6 @@ export default defineConfig({
           },
         ],
       },
-      // `min_viewport_width` is a FreeGameStore-specific compliance field
-      // (read by @freegamestore/compliance viewport-support check), not a
-      // standard PWA manifest member — vite-plugin-pwa's ManifestOptions
-      // type rejects it, so we widen the type to allow the extra key. The
-      // field passes through to the emitted manifest.webmanifest; browsers
-      // ignore unknown members.
       manifest: {
         name: "fireboyandwatergirl",
         short_name: "fireboyandwatergirl",
@@ -57,6 +51,21 @@ export default defineConfig({
       } as Record<string, unknown>,
     }),
   ],
+  build: {
+    // Add rollup options to split the bundle
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split Phaser into its own chunk
+          phaser: ["phaser"],
+          // Split React and its dependencies
+          vendor: ["react", "react-dom", "@freegamestore/games"],
+        },
+      },
+    },
+    // Increase chunk size warning limit (optional)
+    chunkSizeWarningLimit: 600,
+  },
   test: {
     environment: "jsdom",
     globals: true,
