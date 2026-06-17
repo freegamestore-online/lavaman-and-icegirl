@@ -157,6 +157,7 @@ export class FireAndWaterScene extends Phaser.Scene {
   private gameOver = false;
   private currentLevel = 0;
   private score = 0;
+  private gameOverPopup!: Phaser.GameObjects.Container; // Added for popup
 
   constructor() {
     super("FireAndWaterScene");
@@ -492,6 +493,9 @@ export class FireAndWaterScene extends Phaser.Scene {
       this.statusText.setColor("#ff4444");
       this.flashScene(player === "fire" ? 0x1155cc : 0xcc2200);
       this.disablePlayers();
+      
+      // Show the game over popup
+      this.showGameOverPopup();
     }
   }
 
@@ -560,13 +564,121 @@ export class FireAndWaterScene extends Phaser.Scene {
     this.tweens.add({ targets: f, alpha: 0, duration: 400, onComplete: () => f.destroy() });
   }
 
+  // New method to show game over popup
+  private showGameOverPopup() {
+    const { width, height } = this.scale;
+    const cx = width / 2;
+    const cy = height / 2;
+
+    // Create container for popup
+    this.gameOverPopup = this.add.container(cx, cy);
+    this.gameOverPopup.setDepth(100);
+
+    // Semi-transparent overlay
+    const overlay = this.add.rectangle(0, 0, width, height, 0x000000, 0.75);
+    overlay.setInteractive();
+    this.gameOverPopup.add(overlay);
+
+    // Popup background
+    const bg = this.add.rectangle(0, 0, 420, 220, 0x1a2a3a, 0.95);
+    bg.setStrokeStyle(3, 0xff4444);
+    this.gameOverPopup.add(bg);
+
+    // Popup border glow effect
+    const glow = this.add.graphics();
+    glow.lineStyle(2, 0xff4444, 0.3);
+    glow.strokeRoundedRect(-210, -110, 420, 220, 16);
+    this.gameOverPopup.add(glow);
+
+    // Title
+    const title = this.add.text(0, -60, "💀 GAME OVER", {
+      fontSize: "32px",
+      color: "#ff4444",
+      fontStyle: "bold",
+      shadow: { offsetX: 2, offsetY: 2, color: "#000000", blur: 8, fill: true },
+    }).setOrigin(0.5);
+    this.gameOverPopup.add(title);
+
+    // Subtitle
+    const subtitle = this.add.text(0, -20, "You touched the wrong element!", {
+      fontSize: "16px",
+      color: "#ffaa88",
+    }).setOrigin(0.5);
+    this.gameOverPopup.add(subtitle);
+
+    // Restart button
+    const btnBg = this.add.rectangle(0, 40, 200, 48, 0x2563eb, 1)
+      .setInteractive({ useHandCursor: true })
+      .setStrokeStyle(2, 0x3b82f6);
+    this.gameOverPopup.add(btnBg);
+
+    const btnText = this.add.text(0, 40, "🔄 Press R to Retry", {
+      fontSize: "18px",
+      color: "#ffffff",
+      fontStyle: "bold",
+    }).setOrigin(0.5);
+    this.gameOverPopup.add(btnText);
+
+    // Button hover effects
+    btnBg.on("pointerover", () => {
+      btnBg.setFillStyle(0x3b82f6);
+      btnBg.setStrokeStyle(2, 0x60a5fa);
+    });
+    btnBg.on("pointerout", () => {
+      btnBg.setFillStyle(0x2563eb);
+      btnBg.setStrokeStyle(2, 0x3b82f6);
+    });
+    btnBg.on("pointerdown", () => {
+      this.scene.restart({ level: this.currentLevel });
+    });
+
+    // "or" text
+    const orText = this.add.text(0, 85, "— or press ESC for menu —", {
+      fontSize: "12px",
+      color: "#6b8aaa",
+    }).setOrigin(0.5);
+    this.gameOverPopup.add(orText);
+
+    // ESC hint with interactive area
+    const escHint = this.add.text(0, 105, "ESC → Menu", {
+      fontSize: "14px",
+      color: "#4a7aaa",
+    }).setOrigin(0.5);
+    escHint.setInteractive({ useHandCursor: true });
+    escHint.on("pointerdown", () => {
+      this.goToMenu();
+    });
+    this.gameOverPopup.add(escHint);
+
+    // Popup entrance animation
+    this.gameOverPopup.setScale(0.5);
+    this.gameOverPopup.setAlpha(0);
+    this.tweens.add({
+      targets: this.gameOverPopup,
+      scale: 1,
+      alpha: 1,
+      duration: 300,
+      ease: "Back.easeOut",
+    });
+  }
+
   update() {
     if (Phaser.Input.Keyboard.JustDown(this.keys.ESC)) {
+      // If game over popup is showing, go to menu
+      if (this.gameOverPopup && this.gameOverPopup.active) {
+        this.goToMenu();
+        return;
+      }
       this.goToMenu();
       return;
     }
 
     if (this.keys.R.isDown) {
+      // If game over, restart the level
+      if (this.gameOver && this.gameOverPopup && this.gameOverPopup.active) {
+        this.scene.restart({ level: this.currentLevel });
+        return;
+      }
       this.scene.restart({ level: this.currentLevel });
       return;
     }
