@@ -80,3 +80,15 @@ body {
   height: 100%;
   overflow: hidden;
 }
+/* Add these styles for smoother canvas rendering */
+canvas {
+  image-rendering: auto !important; /* Override any pixelated rendering */
+  image-rendering: -webkit-optimize-contrast !important;
+  image-rendering: optimize-quality !important;
+}
+
+/* Make sure the canvas fills smoothly */
+#root canvas {
+  width: 100% !important;
+  height: 100% !important;
+}

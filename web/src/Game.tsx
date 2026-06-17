@@ -1,7 +1,8 @@
 import { useRef, useEffect } from "react";
 import Phaser from "phaser";
 import { useGameSounds } from "@freegamestore/games";
-import { MenuScene, FireAndWaterScene } from "./FireAndWaterScene";
+import { FireAndWaterScene } from "./scenes/FireAndWaterScene";
+import { MenuScene } from "./scenes/MenuScene";
 
 export function Game() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -22,7 +23,6 @@ export function Game() {
 
     const timeout = setTimeout(() => {
       if (!containerRef.current) return;
-      
       gameRef.current = new Phaser.Game({
         type: Phaser.AUTO,
         parent: containerRef.current,
@@ -37,6 +37,17 @@ export function Game() {
         scale: {
           mode: Phaser.Scale.RESIZE,
           autoCenter: Phaser.Scale.CENTER_BOTH,
+        },
+        antialias: true,
+        antialiasGL: true,
+        render: {
+          pixelArt: false,
+          roundPixels: false,
+          antialias: true,
+        },
+        // Add this for sharper text
+        dom: {
+          createContainer: true,
         },
       });
     }, 50);

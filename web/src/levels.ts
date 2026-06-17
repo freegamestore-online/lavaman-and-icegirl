@@ -15,8 +15,8 @@ export type LevelDefinition = {
 export const levels: LevelDefinition[] = [
   {
     title: "Level 1: Forest Run",
-    fireStart: { x: 120, y: 520 },
-    waterStart: { x: 840, y: 260 },
+    fireStart: { x: 200, y: 520 }, // Changed from 120 to 200 (further from goal at 90)
+    waterStart: { x: 760, y: 260 }, // Changed from 840 to 760 (further from goal at 860)
     platforms: [
       { x: 480, y: 620, width: 960, height: 40 },
       { x: 220, y: 490, width: 280, height: 20 },
@@ -26,7 +26,7 @@ export const levels: LevelDefinition[] = [
       { x: 420, y: 260, width: 220, height: 20 },
     ],
     hazards: [
-      { x: 360, y: 600, width: 300, height: 40, type: "water" },
+      { x: 360, y: 600, width: 100, height: 40, type: "water" },
       { x: 660, y: 560, width: 280, height: 40, type: "lava" },
     ],
     goals: [
@@ -41,8 +41,8 @@ export const levels: LevelDefinition[] = [
   },
   {
     title: "Level 2: Crystal Cavern",
-    fireStart: { x: 100, y: 520 },
-    waterStart: { x: 860, y: 150 },
+    fireStart: { x: 800, y: 620},
+    waterStart: { x: 750, y: 620 },
     platforms: [
       { x: 480, y: 620, width: 960, height: 40 },
       { x: 160, y: 490, width: 220, height: 20 },
@@ -53,7 +53,7 @@ export const levels: LevelDefinition[] = [
       { x: 840, y: 200, width: 160, height: 20 },
     ],
     hazards: [
-      { x: 340, y: 590, width: 300, height: 40, type: "lava" },
+      { x: 340, y: 610, width: 300, height: 40, type: "lava" },
       { x: 700, y: 540, width: 220, height: 40, type: "water" },
     ],
     goals: [
