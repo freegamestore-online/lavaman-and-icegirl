@@ -142,7 +142,7 @@ type PlayerKeys = {
 export class FireAndWaterScene extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private keys!: PlayerKeys;
-  private levelText!: Phaser.GameObjects.Text;
+  // private levelText!: Phaser.GameObjects.Text; // REMOVED - unused
   private statusText!: Phaser.GameObjects.Text;
   private fireIndicator!: Phaser.GameObjects.Text;
   private waterIndicator!: Phaser.GameObjects.Text;
@@ -412,7 +412,8 @@ export class FireAndWaterScene extends Phaser.Scene {
   private createUI() {
     const level = levels[this.currentLevel] ?? levels[0]!;
 
-    this.levelText = this.add
+    // Level title text - no assignment needed
+    this.add
       .text(16, 12, level.title, {
         fontSize: "18px",
         color: "#ffffff",
@@ -583,8 +584,8 @@ export class FireAndWaterScene extends Phaser.Scene {
       jump: this.cursors.up.isDown,
     };
 
-    if (!this.fireAtGoal) this.movePlayer(this.fireboy, fd, "fire");
-    if (!this.waterAtGoal) this.movePlayer(this.watergirl, wd, "water");
+    if (!this.fireAtGoal) this.movePlayer(this.fireboy, fd);
+    if (!this.waterAtGoal) this.movePlayer(this.watergirl, wd);
 
     const t = this.time.now / 300;
     if (!this.fireAtGoal && (this.fireboy.body as Phaser.Physics.Arcade.Body).blocked.down && !fd.left && !fd.right) {
@@ -597,8 +598,7 @@ export class FireAndWaterScene extends Phaser.Scene {
 
   private movePlayer(
     player: Phaser.Physics.Arcade.Sprite,
-    actions: { left: boolean; right: boolean; jump: boolean },
-    type: "fire" | "water"
+    actions: { left: boolean; right: boolean; jump: boolean }
   ) {
     const speed = 260;
     const jumpPower = 450;
