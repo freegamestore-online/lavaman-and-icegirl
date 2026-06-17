@@ -12,7 +12,7 @@ export class UIManager {
   private score: number;
   private onRestart: () => void;
   private onMenu: () => void;
-  private onResume: () => void;
+  // Remove onResume - we don't need it since togglePause handles it
   private pauseButton!: Phaser.GameObjects.Container;
   private isPaused = false;
 
@@ -21,15 +21,13 @@ export class UIManager {
     currentLevel: number,
     score: number,
     onRestart: () => void,
-    onMenu: () => void,
-    onResume: () => void
+    onMenu: () => void
   ) {
     this.scene = scene;
     this.currentLevel = currentLevel;
     this.score = score;
     this.onRestart = onRestart;
     this.onMenu = onMenu;
-    this.onResume = onResume;
   }
 
   createUI() {

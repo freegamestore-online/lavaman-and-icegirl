@@ -103,7 +103,7 @@ export class MenuScene extends Phaser.Scene {
         fontFamily: "Manrope, system-ui, sans-serif",
       }).setOrigin(0, 0.5);
 
-      const titleText = this.add.text(cx - 150, btnY - 8, lvl.title.replace(/^Level \d+: /, ""), {
+      this.add.text(cx - 150, btnY - 8, lvl.title.replace(/^Level \d+: /, ""), {
         fontSize: "17px",
         color: isUnlocked ? "#e8f0f8" : "#445566",
         fontStyle: "bold",
@@ -111,7 +111,7 @@ export class MenuScene extends Phaser.Scene {
         fontFamily: "Manrope, system-ui, sans-serif",
       }).setOrigin(0, 0.5);
 
-      const gemText = this.add.text(cx - 150, btnY + 10, `${lvl.gems.length} gems`, {
+      this.add.text(cx - 150, btnY + 10, `${lvl.gems.length} gems`, {
         fontSize: "12px",
         color: "#ffee22",
         resolution: 2,

@@ -111,7 +111,7 @@ export class FireAndWaterScene extends Phaser.Scene {
       this.score,
       () => this.scene.restart({ level: this.currentLevel }),
       () => this.goToMenu(),
-      () => this.uiManager.closePausePopup()
+      // () => this.uiManager.closePausePopup()
     );
     this.uiManager.createUI();
   }
@@ -313,7 +313,7 @@ export class FireAndWaterScene extends Phaser.Scene {
   private get pausePopup() { return this.uiManager.pausePopup; }
   private set pausePopup(value) { this.uiManager.pausePopup = value; }
 
-  private showPausePopup() {
-    this.uiManager.showPausePopup();
-  }
+  // private showPausePopup() {
+  //   this.uiManager.showPausePopup();
+  // }
 }
