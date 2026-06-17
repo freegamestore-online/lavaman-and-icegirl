@@ -111,7 +111,7 @@ export class FireAndWaterScene extends Phaser.Scene {
       this.score,
       () => this.scene.restart({ level: this.currentLevel }),
       () => this.goToMenu(),
-      // () => this.uiManager.closePausePopup()
+
     );
     this.uiManager.createUI();
   }

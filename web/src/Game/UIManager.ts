@@ -12,7 +12,6 @@ export class UIManager {
   private score: number;
   private onRestart: () => void;
   private onMenu: () => void;
-  // Remove onResume - we don't need it since togglePause handles it
   private pauseButton!: Phaser.GameObjects.Container;
   private isPaused = false;
 
