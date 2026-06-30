@@ -31,11 +31,7 @@ export class CollisionManager {
     this.gems = gems;
   }
 
-  setup(
-    onHazard: HazardHandler,
-    onGoal: GoalHandler,
-    onGem: GemHandler
-  ) {
+  setup(onHazard: HazardHandler, onGoal: GoalHandler, onGem: GemHandler) {
     this.scene.physics.add.collider(this.fireboy, this.platforms);
     this.scene.physics.add.collider(this.watergirl, this.platforms);
 

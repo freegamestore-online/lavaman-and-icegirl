@@ -3,6 +3,8 @@ import { TextureGenerator } from "../utils/TextureGenerator";
 import { LevelManager } from "../Game/LevelManager";
 import { UIManager } from "../Game/UIManager";
 import { CollisionManager } from "../Game/CollisionManager";
+import { getScaleFactor } from "../levels"; // already exported, aliases getUniformScale()
+
 
 const getSounds = () => (window as any).__gameSounds;
 
@@ -30,6 +32,10 @@ export class FireAndWaterScene extends Phaser.Scene {
   private uiManager!: UIManager;
   private collisionManager!: CollisionManager;
 
+  private mobileControls = { left: false, right: false, jump: false };
+  private activeMobileCharacter: "fire" | "water" = "fire";
+  private isUsingMobileControls = false;
+
   constructor() {
     super("FireAndWaterScene");
   }
@@ -40,9 +46,15 @@ export class FireAndWaterScene extends Phaser.Scene {
     this.waterAtGoal = false;
     this.gameOver = false;
     this.score = 0;
+    this.game.events.emit("game-active", true);
   }
 
   create() {
+
+    const { width, height } = this.scale;
+      import("../levels").then(({ setScaleFactor }) => {
+        setScaleFactor(width, height);
+      });
     const sounds = getSounds();
     if (sounds) sounds.playMove();
 
@@ -59,7 +71,7 @@ export class FireAndWaterScene extends Phaser.Scene {
     }) as PlayerKeys;
 
     this.input.keyboard?.enableGlobalCapture();
-    this.physics.world.setBounds(0, 0, 960, 640);
+    this.physics.world.setBounds(0, 0, this.scale.width, this.scale.height);
 
     this.createBg();
     this.createLevel();
@@ -68,23 +80,29 @@ export class FireAndWaterScene extends Phaser.Scene {
     this.setupCollisions();
 
     this.cameras.main.fadeIn(250, 0, 0, 0);
+    this.game.events.emit("game-active", true);
+  }
+
+  shutdown() {
+    this.game.events.emit("game-active", false);
   }
 
   private createBg() {
-    const { width, height } = this.scale;
-    this.add.rectangle(width / 2, height / 2, width, height, 0x0d1f35);
-    for (let i = 0; i < 6; i++) {
-      this.add.rectangle(width / 2, 60 + i * 60, width, 60, 0x0a1828 + i * 0x010204, 0.4);
+    const W = this.scale.width;
+    const H = this.scale.height;
+    this.add.rectangle(W / 2, H / 2, W, H, 0x0d1f35);
+    for (let i = 0; i < 5; i++) {
+      this.add.rectangle(W / 2, 50 + i * 50, W, 50, 0x0a1828 + i * 0x010204, 0.35);
     }
     const starG = this.add.graphics();
     starG.fillStyle(0xffffff, 1);
-    for (let i = 0; i < 40; i++) {
-      const sx = Phaser.Math.Between(0, 960);
-      const sy = Phaser.Math.Between(0, 280);
+    for (let i = 0; i < 30; i++) {
+      const sx = Phaser.Math.Between(0, W);
+      const sy = Phaser.Math.Between(0, 200);
       const sz = Math.random() > 0.7 ? 2 : 1;
       starG.fillRect(sx, sy, sz, sz);
     }
-    this.add.rectangle(width / 2, height - 10, width, 20, 0x1a3a5c);
+    this.add.rectangle(W / 2, H - 8, W, 16, 0x1a3a5c);
   }
 
   private createLevel() {
@@ -94,12 +112,15 @@ export class FireAndWaterScene extends Phaser.Scene {
 
   private createPlayers() {
     const level = this.levelManager.getCurrentLevelData();
+    const scale = getScaleFactor();
+
     this.fireboy = this.physics.add.sprite(level.fireStart.x, level.fireStart.y, "fireboy");
     this.watergirl = this.physics.add.sprite(level.waterStart.x, level.waterStart.y, "watergirl");
 
     [this.fireboy, this.watergirl].forEach((p) => {
+      p.setScale(scale);
       p.setBounce(0.05).setCollideWorldBounds(true).setDragX(1100).setDepth(4);
-      p.setBodySize(28, 44).setOffset(6, 4);
+      p.setBodySize(20, 32).setOffset(4, 3); // body size stays in texture-space, setScale handles the rest
       (p.body as Phaser.Physics.Arcade.Body).setGravityY(700);
     });
   }
@@ -110,8 +131,7 @@ export class FireAndWaterScene extends Phaser.Scene {
       this.currentLevel,
       this.score,
       () => this.scene.restart({ level: this.currentLevel }),
-      () => this.goToMenu(),
-
+      () => this.goToMenu()
     );
     this.uiManager.createUI();
   }
@@ -134,16 +154,16 @@ export class FireAndWaterScene extends Phaser.Scene {
     );
   }
 
+  // In FireAndWaterScene.ts, update the collectGem method:
   private collectGem(gem: Phaser.GameObjects.GameObject) {
     if (gem.getData("collected")) return;
     gem.setData("collected", true);
     gem.destroy();
-
     const sounds = getSounds();
     if (sounds) sounds.playScore();
-
     this.score++;
-    this.cameras.main.shake(80, 0.008);
+    this.uiManager.updateScore(this.score); // Add this line to update UI
+    this.cameras.main.shake(60, 0.006);
   }
 
   private handleHazard(player: "fire" | "water", hazardType: string) {
@@ -155,7 +175,6 @@ export class FireAndWaterScene extends Phaser.Scene {
       this.gameOver = true;
       const sounds = getSounds();
       if (sounds) sounds.playError();
-
       this.uiManager.setStatus("💀 Oops! Press R to retry.", "#ff4444");
       this.flashScene(player === "fire" ? 0x1155cc : 0xcc2200);
       this.disablePlayers();
@@ -170,11 +189,9 @@ export class FireAndWaterScene extends Phaser.Scene {
       this.fireAtGoal = true;
       const sounds = getSounds();
       if (sounds) sounds.playLevelUp();
-
       this.fireboy.setVelocity(0, 0);
       (this.fireboy.body as Phaser.Physics.Arcade.Body).allowGravity = false;
       this.fireboy.setAlpha(0.6);
-
       this.uiManager.setStatus("🔥 Ready! Waiting for 💧...", "#ffaa44");
     }
 
@@ -182,11 +199,9 @@ export class FireAndWaterScene extends Phaser.Scene {
       this.waterAtGoal = true;
       const sounds = getSounds();
       if (sounds) sounds.playLevelUp();
-
       this.watergirl.setVelocity(0, 0);
       (this.watergirl.body as Phaser.Physics.Arcade.Body).allowGravity = false;
       this.watergirl.setAlpha(0.6);
-
       this.uiManager.setStatus("💧 Ready! Waiting for 🔥...", "#44aaff");
     }
 
@@ -199,14 +214,14 @@ export class FireAndWaterScene extends Phaser.Scene {
       if (sounds) sounds.playGameOver();
 
       if (this.levelManager.hasNextLevel()) {
-        this.uiManager.setStatus("✨ Level complete! Loading next level...", "#44ff88");
+        this.uiManager.setStatus("✨ Level complete!", "#44ff88");
         this.flashScene(0x22cc66);
         this.cameras.main.fadeOut(800, 0, 0, 0);
         this.cameras.main.once("camerafadeoutcomplete", () => {
           this.scene.restart({ level: nextLevel });
         });
       } else {
-        this.uiManager.setStatus("🏆 You beat all 5 levels! Press R to replay or ESC for menu.", "#ffee44");
+        this.uiManager.setStatus("🏆 All levels cleared! Press R to replay.", "#ffee44");
         this.flashScene(0x22cc66);
       }
     }
@@ -220,57 +235,67 @@ export class FireAndWaterScene extends Phaser.Scene {
   }
 
   private flashScene(color: number) {
-    const f = this.add.rectangle(480, 320, 960, 640, color, 0.25).setDepth(50);
+    const W = this.scale.width;
+    const H = this.scale.height;
+    const f = this.add.rectangle(W / 2, H / 2, W, H, color, 0.25).setDepth(50);
     this.tweens.add({ targets: f, alpha: 0, duration: 400, onComplete: () => f.destroy() });
   }
 
+  setMobileControls(
+    controls: { left: boolean; right: boolean; jump: boolean },
+    activeCharacter: "fire" | "water"
+  ) {
+    this.mobileControls = controls;
+    this.activeMobileCharacter = activeCharacter;
+    this.isUsingMobileControls = true;
+  }
+
   update() {
-    // Handle ESC key - toggle pause
     if (Phaser.Input.Keyboard.JustDown(this.keys.ESC)) {
-      // If game over popup is showing, go to menu
-      if (this.gameOverPopup && this.gameOverPopup.active) {
-        this.goToMenu();
-        return;
-      }
-      // Toggle pause
-      if (!this.gameOver) {
-        this.uiManager.togglePause();
-        return;
-      }
-      this.goToMenu();
-      return;
+      if (this.uiManager.gameOverPopup?.active) { this.goToMenu(); return; }
+      if (!this.gameOver) { this.uiManager.togglePause(); return; }
+      this.goToMenu(); return;
     }
 
     if (this.keys.R.isDown) {
-      if (this.gameOver || (this.pausePopup && this.pausePopup.active)) {
-        this.scene.restart({ level: this.currentLevel });
-        return;
-      }
-      this.scene.restart({ level: this.currentLevel });
-      return;
+      this.scene.restart({ level: this.currentLevel }); return;
     }
 
     if (this.gameOver) return;
-    if (this.pausePopup && this.pausePopup.active) return;
-    const fd = {
+    if (this.uiManager.pausePopup?.active) return;
+
+    const keyboardFire = {
       left: this.keys.A.isDown,
       right: this.keys.D.isDown,
       jump: this.keys.W.isDown,
     };
-    const wd = {
+    const keyboardWater = {
       left: this.cursors.left.isDown,
       right: this.cursors.right.isDown,
       jump: this.cursors.up.isDown,
     };
 
-    if (!this.fireAtGoal) this.movePlayer(this.fireboy, fd);
-    if (!this.waterAtGoal) this.movePlayer(this.watergirl, wd);
+    let fireControls = keyboardFire;
+    let waterControls = keyboardWater;
+
+    if (this.isUsingMobileControls) {
+      if (this.activeMobileCharacter === "fire") {
+        fireControls = this.mobileControls;
+      } else {
+        waterControls = this.mobileControls;
+      }
+    }
+
+    if (!this.fireAtGoal) this.movePlayer(this.fireboy, fireControls);
+    if (!this.waterAtGoal) this.movePlayer(this.watergirl, waterControls);
 
     const t = this.time.now / 300;
-    if (!this.fireAtGoal && (this.fireboy.body as Phaser.Physics.Arcade.Body).blocked.down && !fd.left && !fd.right) {
+    if (!this.fireAtGoal && (this.fireboy.body as Phaser.Physics.Arcade.Body).blocked.down &&
+        !fireControls.left && !fireControls.right) {
       this.fireboy.y += Math.sin(t) * 0.3;
     }
-    if (!this.waterAtGoal && (this.watergirl.body as Phaser.Physics.Arcade.Body).blocked.down && !wd.left && !wd.right) {
+    if (!this.waterAtGoal && (this.watergirl.body as Phaser.Physics.Arcade.Body).blocked.down &&
+        !waterControls.left && !waterControls.right) {
       this.watergirl.y += Math.sin(t + 1) * 0.3;
     }
   }
@@ -279,8 +304,8 @@ export class FireAndWaterScene extends Phaser.Scene {
     player: Phaser.Physics.Arcade.Sprite,
     actions: { left: boolean; right: boolean; jump: boolean }
   ) {
-    const speed = 260;
-    const jumpPower = 450;
+    const speed = 200;
+    const jumpPower = 400;
     const body = player.body as Phaser.Physics.Arcade.Body | null;
     if (!body) return;
 
@@ -308,12 +333,7 @@ export class FireAndWaterScene extends Phaser.Scene {
     });
   }
 
-  // Helper getters for UI Manager
   private get gameOverPopup() { return this.uiManager.gameOverPopup; }
   private get pausePopup() { return this.uiManager.pausePopup; }
   private set pausePopup(value) { this.uiManager.pausePopup = value; }
-
-  // private showPausePopup() {
-  //   this.uiManager.showPausePopup();
-  // }
 }

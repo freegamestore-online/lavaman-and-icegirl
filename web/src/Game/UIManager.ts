@@ -1,5 +1,6 @@
+// UIManager.ts
 import Phaser from "phaser";
-import { levels } from "../levels";
+import { levelDefs } from "../levels";
 
 export class UIManager {
   private scene: Phaser.Scene;
@@ -30,23 +31,44 @@ export class UIManager {
   }
 
   createUI() {
-    const level = levels[this.currentLevel] ?? levels[0]!;
+    const level = levelDefs[this.currentLevel] ?? levelDefs[0]!;
+    const W = this.scene.scale.width;
+    const H = this.scene.scale.height;
 
+    // ---- TOP BAR ----
+    const topBar = this.scene.add.graphics();
+    topBar.fillStyle(0x0a1828, 0.92);
+    topBar.fillRect(0, 0, W, 44);
+    topBar.setDepth(9).setScrollFactor(0);
+
+    // Title
     this.scene.add
-      .text(16, 12, level.title, {
-        fontSize: "18px",
+      .text(12, 10, level.title, {
+        fontSize: "14px",
         color: "#ffffff",
         fontStyle: "bold",
-        shadow: { offsetX: 1, offsetY: 1, color: "#000000", blur: 2, fill: true },
         resolution: 2,
         fontFamily: "Manrope, system-ui, sans-serif",
       })
       .setScrollFactor(0)
       .setDepth(10);
 
-    this.statusText = this.scene.add
-      .text(16, 36, "WASD = 🔥  |  Arrows = 💧  |  R = Restart  |  ESC = Pause", {
+    // Level number
+    this.scene.add
+      .text(W - 80, 10, `LVL ${this.currentLevel + 1}/${levelDefs.length}`, {
         fontSize: "12px",
+        color: "#60a5fa",
+        fontStyle: "bold",
+        resolution: 2,
+        fontFamily: "Manrope, system-ui, sans-serif",
+      })
+      .setScrollFactor(0)
+      .setDepth(10);
+
+    // Controls hint
+    this.statusText = this.scene.add
+      .text(12, 28, "WASD=🔥  Arrows=💧  R=Restart  ESC=Pause", {
+        fontSize: "9px",
         color: "#a0b8cc",
         resolution: 2,
         fontFamily: "Manrope, system-ui, sans-serif",
@@ -54,9 +76,27 @@ export class UIManager {
       .setScrollFactor(0)
       .setDepth(10);
 
+    // ---- BOTTOM BAR ----
+    const botBar = this.scene.add.graphics();
+    botBar.fillStyle(0x0a1828, 0.85);
+    botBar.fillRect(0, H - 32, W, 32);
+    botBar.setDepth(9).setScrollFactor(0);
+
+    // Gem counter
+    this.scene.add
+      .text(10, H - 24, `💎 ${this.score}`, {
+        fontSize: "14px",
+        color: "#ffee22",
+        resolution: 2,
+        fontFamily: "Manrope, system-ui, sans-serif",
+      })
+      .setScrollFactor(0)
+      .setDepth(10);
+
+    // Fire indicator
     this.fireIndicator = this.scene.add
-      .text(16, 600, "🔥 Moving", { 
-        fontSize: "13px", 
+      .text(60, H - 24, "🔥 Moving", {
+        fontSize: "11px",
         color: "#ff8866",
         resolution: 2,
         fontFamily: "Manrope, system-ui, sans-serif",
@@ -64,9 +104,10 @@ export class UIManager {
       .setScrollFactor(0)
       .setDepth(10);
 
+    // Water indicator
     this.waterIndicator = this.scene.add
-      .text(200, 600, "💧 Moving", { 
-        fontSize: "13px", 
+      .text(W / 2 + 20, H - 24, "💧 Moving", {
+        fontSize: "11px",
         color: "#66ccff",
         resolution: 2,
         fontFamily: "Manrope, system-ui, sans-serif",
@@ -74,422 +115,220 @@ export class UIManager {
       .setScrollFactor(0)
       .setDepth(10);
 
-    // Create pause button in top right corner
     this.createPauseButton();
   }
 
   private createPauseButton() {
-    const { width } = this.scene.scale;
-    const x = width - 30;
-    const y = 30;
+    const x = this.scene.scale.width - 24;
+    const y = 22;
 
-    // Container for button
     this.pauseButton = this.scene.add.container(x, y);
-    this.pauseButton.setDepth(20);
+    this.pauseButton.setDepth(20).setScrollFactor(0);
 
-    // Button background - circle with border
     const bg = this.scene.add.graphics();
     bg.fillStyle(0x1a2a3a, 0.85);
-    bg.fillCircle(0, 0, 22);
-    bg.lineStyle(2, 0x3b82f6, 1);
-    bg.strokeCircle(0, 0, 22);
+    bg.fillCircle(0, 0, 16);
+    bg.lineStyle(1.5, 0x3b82f6, 1);
+    bg.strokeCircle(0, 0, 16);
     this.pauseButton.add(bg);
 
-    // Pause icon (two vertical bars)
     const icon = this.scene.add.text(0, 0, "⏸", {
-      fontSize: "20px",
-      color: "#ffffff",
-      resolution: 2,
-    }).setOrigin(0.5);
-    this.pauseButton.add(icon);
-
-    // Make it interactive
-    const hitArea = new Phaser.Geom.Circle(0, 0, 22);
-    const hitZone = this.scene.add.zone(0, 0, 44, 44)
-      .setInteractive({ hitArea, useHandCursor: true });
-    this.pauseButton.add(hitZone);
-
-    // Hover effects
-    hitZone.on("pointerover", () => {
-      bg.clear();
-      bg.fillStyle(0x2a4a6a, 0.9);
-      bg.fillCircle(0, 0, 22);
-      bg.lineStyle(2, 0x60a5fa, 1);
-      bg.strokeCircle(0, 0, 22);
-    });
-
-    hitZone.on("pointerout", () => {
-      bg.clear();
-      bg.fillStyle(0x1a2a3a, 0.85);
-      bg.fillCircle(0, 0, 22);
-      bg.lineStyle(2, 0x3b82f6, 1);
-      bg.strokeCircle(0, 0, 22);
-    });
-
-    hitZone.on("pointerdown", () => {
-      this.togglePause();
-    });
-
-    // Tooltip on hover
-    const tooltip = this.scene.add.text(0, -35, "Pause", {
-      fontSize: "10px",
-      color: "#ffffff",
-      backgroundColor: "#00000088",
-      padding: { x: 6, y: 3 },
+      fontSize: "14px", 
+      color: "#ffffff", 
       resolution: 2,
       fontFamily: "Manrope, system-ui, sans-serif",
     }).setOrigin(0.5);
-    tooltip.setVisible(false);
-    this.pauseButton.add(tooltip);
+    this.pauseButton.add(icon);
+
+    const hitZone = this.scene.add.zone(0, 0, 36, 36)
+      .setInteractive({ hitArea: new Phaser.Geom.Circle(0, 0, 18), useHandCursor: true });
+    this.pauseButton.add(hitZone);
 
     hitZone.on("pointerover", () => {
-      tooltip.setVisible(true);
+      bg.clear();
+      bg.fillStyle(0x2a4a6a, 0.9);
+      bg.fillCircle(0, 0, 16);
+      bg.lineStyle(1.5, 0x60a5fa, 1);
+      bg.strokeCircle(0, 0, 16);
     });
     hitZone.on("pointerout", () => {
-      tooltip.setVisible(false);
+      bg.clear();
+      bg.fillStyle(0x1a2a3a, 0.85);
+      bg.fillCircle(0, 0, 16);
+      bg.lineStyle(1.5, 0x3b82f6, 1);
+      bg.strokeCircle(0, 0, 16);
     });
+    hitZone.on("pointerdown", () => this.togglePause());
   }
 
   togglePause() {
     if (this.isPaused) {
-      // Resume
       this.closePausePopup();
       this.isPaused = false;
-      // Update button icon
       const icon = this.pauseButton.list[1] as Phaser.GameObjects.Text;
       if (icon) icon.setText("⏸");
     } else {
-      // Pause
       this.showPausePopup();
       this.isPaused = true;
-      // Update button icon
       const icon = this.pauseButton.list[1] as Phaser.GameObjects.Text;
       if (icon) icon.setText("▶");
     }
   }
 
   updateIndicators(fireAtGoal: boolean, waterAtGoal: boolean) {
-    this.fireIndicator.setText(fireAtGoal ? "🔥 At goal! ✓" : "🔥 Moving");
-    this.waterIndicator.setText(waterAtGoal ? "💧 At goal! ✓" : "💧 Moving");
+    if (this.fireIndicator) {
+      this.fireIndicator.setText(fireAtGoal ? "🔥 At goal ✓" : "🔥 Moving");
+    }
+    if (this.waterIndicator) {
+      this.waterIndicator.setText(waterAtGoal ? "💧 At goal ✓" : "💧 Moving");
+    }
+  }
+
+  updateScore(newScore: number) {
+    this.score = newScore;
+    // Update the gem counter - find and update it
+    const gems = this.scene.children.getChildren();
+    for (const child of gems) {
+      if (child instanceof Phaser.GameObjects.Text && child.text?.startsWith("💎")) {
+        child.setText(`💎 ${this.score}`);
+        break;
+      }
+    }
   }
 
   showGameOverPopup() {
-    const { width, height } = this.scene.scale;
-    const cx = width / 2;
-    const cy = height / 2;
+    const cx = this.scene.scale.width / 2;
+    const cy = this.scene.scale.height / 2;
 
     this.gameOverPopup = this.scene.add.container(cx, cy);
     this.gameOverPopup.setDepth(100);
 
-    // Semi-transparent overlay
-    const overlay = this.scene.add.rectangle(0, 0, width, height, 0x000000, 0.75);
+    const overlay = this.scene.add.rectangle(0, 0, this.scene.scale.width, this.scene.scale.height, 0x000000, 0.75);
     overlay.setInteractive();
     this.gameOverPopup.add(overlay);
 
-    // Popup background with rounded corners
+    const bw = 280, bh = 190;
     const bg = this.scene.add.graphics();
-    bg.fillStyle(0x1a2a3a, 0.95);
-    bg.fillRoundedRect(-210, -110, 420, 220, 16);
-    bg.lineStyle(3, 0xff4444, 1);
-    bg.strokeRoundedRect(-210, -110, 420, 220, 16);
+    bg.fillStyle(0x1a2a3a, 0.97);
+    bg.fillRoundedRect(-bw / 2, -bh / 2, bw, bh, 14);
+    bg.lineStyle(2.5, 0xff4444, 1);
+    bg.strokeRoundedRect(-bw / 2, -bh / 2, bw, bh, 14);
     this.gameOverPopup.add(bg);
 
-    // Glow effect
-    const glow = this.scene.add.graphics();
-    glow.lineStyle(2, 0xff4444, 0.2);
-    glow.strokeRoundedRect(-215, -115, 430, 230, 20);
-    this.gameOverPopup.add(glow);
+    this.gameOverPopup.add(
+      this.scene.add.text(0, -70, "💀 GAME OVER", {
+        fontSize: "28px", color: "#ff4444", fontStyle: "bold",
+        shadow: { offsetX: 2, offsetY: 2, color: "#000", blur: 8, fill: true },
+        resolution: 2, fontFamily: "Manrope, system-ui, sans-serif",
+      }).setOrigin(0.5)
+    );
 
-    // Title
-    const title = this.scene.add.text(0, -60, "💀 GAME OVER", {
-      fontSize: "34px",
-      color: "#ff4444",
-      fontStyle: "bold",
-      shadow: { offsetX: 2, offsetY: 2, color: "#000000", blur: 8, fill: true },
-      resolution: 2,
-      fontFamily: "Manrope, system-ui, sans-serif",
-    }).setOrigin(0.5);
-    this.gameOverPopup.add(title);
+    this.gameOverPopup.add(
+      this.scene.add.text(0, -36, "Wrong element!", {
+        fontSize: "14px", color: "#ffaa88", resolution: 2,
+        fontFamily: "Manrope, system-ui, sans-serif",
+      }).setOrigin(0.5)
+    );
 
-    // Subtitle
-    const subtitle = this.scene.add.text(0, -20, "You touched the wrong element!", {
-      fontSize: "16px",
-      color: "#ffaa88",
-      resolution: 2,
-      fontFamily: "Manrope, system-ui, sans-serif",
-    }).setOrigin(0.5);
-    this.gameOverPopup.add(subtitle);
+    this._addPopupBtn(this.gameOverPopup, 0, 10, 220, 44, 0x2563eb, 0x3b82f6, "🔄 Restart", this.onRestart);
+    this._addPopupBtn(this.gameOverPopup, 0, 64, 220, 38, 0x4a5568, 0x5a6a7a, "🏠 Main Menu", this.onMenu);
 
-    // Restart button with rounded corners
-    const btnBg = this.scene.add.graphics();
-    btnBg.fillStyle(0x2563eb, 1);
-    btnBg.fillRoundedRect(-100, 15, 200, 48, 12);
-    btnBg.lineStyle(2, 0x3b82f6, 1);
-    btnBg.strokeRoundedRect(-100, 15, 200, 48, 12);
-    this.gameOverPopup.add(btnBg);
-
-    const btnText = this.scene.add.text(0, 39, "🔄 Restart", {
-      fontSize: "18px",
-      color: "#ffffff",
-      fontStyle: "bold",
-      resolution: 2,
-      fontFamily: "Manrope, system-ui, sans-serif",
-    }).setOrigin(0.5);
-    this.gameOverPopup.add(btnText);
-
-    // Make button interactive
-    const hitArea = new Phaser.Geom.Rectangle(-100, 15, 200, 48);
-    const interactiveBtn = this.scene.add.zone(0, 39, 200, 48)
-      .setInteractive({ hitArea, useHandCursor: true });
-    this.gameOverPopup.add(interactiveBtn);
-
-    interactiveBtn.on("pointerover", () => {
-      btnBg.clear();
-      btnBg.fillStyle(0x3b82f6, 1);
-      btnBg.fillRoundedRect(-100, 15, 200, 48, 12);
-      btnBg.lineStyle(2, 0x60a5fa, 1);
-      btnBg.strokeRoundedRect(-100, 15, 200, 48, 12);
-    });
-    interactiveBtn.on("pointerout", () => {
-      btnBg.clear();
-      btnBg.fillStyle(0x2563eb, 1);
-      btnBg.fillRoundedRect(-100, 15, 200, 48, 12);
-      btnBg.lineStyle(2, 0x3b82f6, 1);
-      btnBg.strokeRoundedRect(-100, 15, 200, 48, 12);
-    });
-    interactiveBtn.on("pointerdown", this.onRestart);
-
-    // Menu button
-    const menuBtnBg = this.scene.add.graphics();
-    menuBtnBg.fillStyle(0x4a5568, 1);
-    menuBtnBg.fillRoundedRect(-100, 75, 200, 40, 12);
-    menuBtnBg.lineStyle(2, 0x6b7a8c, 1);
-    menuBtnBg.strokeRoundedRect(-100, 75, 200, 40, 12);
-    this.gameOverPopup.add(menuBtnBg);
-
-    const menuBtnText = this.scene.add.text(0, 95, "🏠 Main Menu", {
-      fontSize: "16px",
-      color: "#ffffff",
-      fontStyle: "bold",
-      resolution: 2,
-      fontFamily: "Manrope, system-ui, sans-serif",
-    }).setOrigin(0.5);
-    this.gameOverPopup.add(menuBtnText);
-
-    const menuHit = new Phaser.Geom.Rectangle(-100, 75, 200, 40);
-    const menuBtn = this.scene.add.zone(0, 95, 200, 40)
-      .setInteractive({ hitArea: menuHit, useHandCursor: true });
-    this.gameOverPopup.add(menuBtn);
-    menuBtn.on("pointerdown", this.onMenu);
-    menuBtn.on("pointerover", () => {
-      menuBtnBg.clear();
-      menuBtnBg.fillStyle(0x5a6a7a, 1);
-      menuBtnBg.fillRoundedRect(-100, 75, 200, 40, 12);
-      menuBtnBg.lineStyle(2, 0x7a8a9a, 1);
-      menuBtnBg.strokeRoundedRect(-100, 75, 200, 40, 12);
-    });
-    menuBtn.on("pointerout", () => {
-      menuBtnBg.clear();
-      menuBtnBg.fillStyle(0x4a5568, 1);
-      menuBtnBg.fillRoundedRect(-100, 75, 200, 40, 12);
-      menuBtnBg.lineStyle(2, 0x6b7a8c, 1);
-      menuBtnBg.strokeRoundedRect(-100, 75, 200, 40, 12);
-    });
-
-    // Popup entrance animation
-    this.gameOverPopup.setScale(0.5);
-    this.gameOverPopup.setAlpha(0);
-    this.scene.tweens.add({
-      targets: this.gameOverPopup,
-      scale: 1,
-      alpha: 1,
-      duration: 300,
-      ease: "Back.easeOut",
-    });
+    this._animatePopup(this.gameOverPopup);
   }
 
   showPausePopup() {
-    const { width, height } = this.scene.scale;
-    const cx = width / 2;
-    const cy = height / 2;
+    const cx = this.scene.scale.width / 2;
+    const cy = this.scene.scale.height / 2;
 
     this.pausePopup = this.scene.add.container(cx, cy);
     this.pausePopup.setDepth(100);
 
-    // Semi-transparent overlay
-    const overlay = this.scene.add.rectangle(0, 0, width, height, 0x000000, 0.75);
+    const overlay = this.scene.add.rectangle(0, 0, this.scene.scale.width, this.scene.scale.height, 0x000000, 0.75);
     overlay.setInteractive();
     this.pausePopup.add(overlay);
 
-    // Popup background with rounded corners
+    const bw = 280, bh = 240;
     const bg = this.scene.add.graphics();
-    bg.fillStyle(0x1a2a3a, 0.95);
-    bg.fillRoundedRect(-210, -140, 420, 280, 16);
-    bg.lineStyle(3, 0x3b82f6, 1);
-    bg.strokeRoundedRect(-210, -140, 420, 280, 16);
+    bg.fillStyle(0x1a2a3a, 0.97);
+    bg.fillRoundedRect(-bw / 2, -bh / 2, bw, bh, 14);
+    bg.lineStyle(2.5, 0x3b82f6, 1);
+    bg.strokeRoundedRect(-bw / 2, -bh / 2, bw, bh, 14);
     this.pausePopup.add(bg);
 
-    // Title
-    const title = this.scene.add.text(0, -100, "⏸ PAUSED", {
-      fontSize: "38px",
-      color: "#ffffff",
-      fontStyle: "bold",
-      shadow: { offsetX: 2, offsetY: 2, color: "#000000", blur: 8, fill: true },
-      resolution: 2,
+    this.pausePopup.add(
+      this.scene.add.text(0, -95, "⏸ PAUSED", {
+        fontSize: "30px", color: "#ffffff", fontStyle: "bold",
+        shadow: { offsetX: 2, offsetY: 2, color: "#000", blur: 8, fill: true },
+        resolution: 2, fontFamily: "Manrope, system-ui, sans-serif",
+      }).setOrigin(0.5)
+    );
+
+    const level = levelDefs[this.currentLevel] ?? levelDefs[0]!;
+    this.pausePopup.add(
+      this.scene.add.text(0, -58, level.title, {
+        fontSize: "13px", color: "#a0b8cc", resolution: 2,
+        fontFamily: "Manrope, system-ui, sans-serif",
+      }).setOrigin(0.5)
+    );
+    this.pausePopup.add(
+      this.scene.add.text(0, -38, `💎 ${this.score} gem${this.score !== 1 ? "s" : ""} collected`, {
+        fontSize: "12px", color: "#ffee22", resolution: 2,
+        fontFamily: "Manrope, system-ui, sans-serif",
+      }).setOrigin(0.5)
+    );
+
+    this._addPopupBtn(this.pausePopup, 0, -10, 220, 44, 0x2563eb, 0x3b82f6, "▶ Resume", () => this.togglePause());
+    this._addPopupBtn(this.pausePopup, 0, 44, 220, 44, 0xdc2626, 0xef4444, "🔄 Restart", this.onRestart);
+    this._addPopupBtn(this.pausePopup, 0, 98, 220, 38, 0x4a5568, 0x5a6a7a, "🏠 Main Menu", this.onMenu);
+
+    this.pausePopup.add(
+      this.scene.add.text(0, 148, "ESC to resume", {
+        fontSize: "10px", color: "#6b8aaa", resolution: 2,
+        fontFamily: "Manrope, system-ui, sans-serif",
+      }).setOrigin(0.5)
+    );
+
+    this._animatePopup(this.pausePopup);
+  }
+
+  private _addPopupBtn(
+    container: Phaser.GameObjects.Container,
+    x: number, y: number,
+    w: number, h: number,
+    colorNormal: number, colorHover: number,
+    label: string,
+    callback: () => void
+  ) {
+    const bg = this.scene.add.graphics();
+    const drawBg = (col: number) => {
+      bg.clear();
+      bg.fillStyle(col, 1);
+      bg.fillRoundedRect(x - w / 2, y, w, h, 10);
+      bg.lineStyle(1.5, col + 0x222222, 1);
+      bg.strokeRoundedRect(x - w / 2, y, w, h, 10);
+    };
+    drawBg(colorNormal);
+    container.add(bg);
+
+    const txt = this.scene.add.text(x, y + h / 2, label, {
+      fontSize: "15px", color: "#ffffff", fontStyle: "bold", resolution: 2,
       fontFamily: "Manrope, system-ui, sans-serif",
     }).setOrigin(0.5);
-    this.pausePopup.add(title);
+    container.add(txt);
 
-    // Level info
-    const level = levels[this.currentLevel] ?? levels[0]!;
-    const levelInfo = this.scene.add.text(0, -60, level.title, {
-      fontSize: "16px",
-      color: "#a0b8cc",
-      resolution: 2,
-      fontFamily: "Manrope, system-ui, sans-serif",
-    }).setOrigin(0.5);
-    this.pausePopup.add(levelInfo);
+    const hitZone = this.scene.add.zone(x, y + h / 2, w, h)
+      .setInteractive({ hitArea: new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), useHandCursor: true });
+    container.add(hitZone);
 
-    // Score info
-    const scoreInfo = this.scene.add.text(0, -35, `💎 Gems collected: ${this.score}`, {
-      fontSize: "14px",
-      color: "#ffee22",
-      resolution: 2,
-      fontFamily: "Manrope, system-ui, sans-serif",
-    }).setOrigin(0.5);
-    this.pausePopup.add(scoreInfo);
+    hitZone.on("pointerover", () => drawBg(colorHover));
+    hitZone.on("pointerout",  () => drawBg(colorNormal));
+    hitZone.on("pointerdown", callback);
+  }
 
-    // Resume button
-    const resumeBg = this.scene.add.graphics();
-    resumeBg.fillStyle(0x2563eb, 1);
-    resumeBg.fillRoundedRect(-100, 0, 200, 48, 12);
-    resumeBg.lineStyle(2, 0x3b82f6, 1);
-    resumeBg.strokeRoundedRect(-100, 0, 200, 48, 12);
-    this.pausePopup.add(resumeBg);
-
-    const resumeText = this.scene.add.text(0, 24, "▶ Resume", {
-      fontSize: "18px",
-      color: "#ffffff",
-      fontStyle: "bold",
-      resolution: 2,
-      fontFamily: "Manrope, system-ui, sans-serif",
-    }).setOrigin(0.5);
-    this.pausePopup.add(resumeText);
-
-    const resumeHit = new Phaser.Geom.Rectangle(-100, 0, 200, 48);
-    const resumeBtn = this.scene.add.zone(0, 24, 200, 48)
-      .setInteractive({ hitArea: resumeHit, useHandCursor: true });
-    this.pausePopup.add(resumeBtn);
-    resumeBtn.on("pointerdown", () => {
-      this.togglePause();
-    });
-    resumeBtn.on("pointerover", () => {
-      resumeBg.clear();
-      resumeBg.fillStyle(0x3b82f6, 1);
-      resumeBg.fillRoundedRect(-100, 0, 200, 48, 12);
-      resumeBg.lineStyle(2, 0x60a5fa, 1);
-      resumeBg.strokeRoundedRect(-100, 0, 200, 48, 12);
-    });
-    resumeBtn.on("pointerout", () => {
-      resumeBg.clear();
-      resumeBg.fillStyle(0x2563eb, 1);
-      resumeBg.fillRoundedRect(-100, 0, 200, 48, 12);
-      resumeBg.lineStyle(2, 0x3b82f6, 1);
-      resumeBg.strokeRoundedRect(-100, 0, 200, 48, 12);
-    });
-
-    // Restart button
-    const restartBg = this.scene.add.graphics();
-    restartBg.fillStyle(0xdc2626, 1);
-    restartBg.fillRoundedRect(-100, 60, 200, 48, 12);
-    restartBg.lineStyle(2, 0xef4444, 1);
-    restartBg.strokeRoundedRect(-100, 60, 200, 48, 12);
-    this.pausePopup.add(restartBg);
-
-    const restartText = this.scene.add.text(0, 84, "🔄 Restart Level", {
-      fontSize: "18px",
-      color: "#ffffff",
-      fontStyle: "bold",
-      resolution: 2,
-      fontFamily: "Manrope, system-ui, sans-serif",
-    }).setOrigin(0.5);
-    this.pausePopup.add(restartText);
-
-    const restartHit = new Phaser.Geom.Rectangle(-100, 60, 200, 48);
-    const restartBtn = this.scene.add.zone(0, 84, 200, 48)
-      .setInteractive({ hitArea: restartHit, useHandCursor: true });
-    this.pausePopup.add(restartBtn);
-    restartBtn.on("pointerdown", this.onRestart);
-    restartBtn.on("pointerover", () => {
-      restartBg.clear();
-      restartBg.fillStyle(0xef4444, 1);
-      restartBg.fillRoundedRect(-100, 60, 200, 48, 12);
-      restartBg.lineStyle(2, 0xf87171, 1);
-      restartBg.strokeRoundedRect(-100, 60, 200, 48, 12);
-    });
-    restartBtn.on("pointerout", () => {
-      restartBg.clear();
-      restartBg.fillStyle(0xdc2626, 1);
-      restartBg.fillRoundedRect(-100, 60, 200, 48, 12);
-      restartBg.lineStyle(2, 0xef4444, 1);
-      restartBg.strokeRoundedRect(-100, 60, 200, 48, 12);
-    });
-
-    // Menu button
-    const menuBg = this.scene.add.graphics();
-    menuBg.fillStyle(0x4a5568, 1);
-    menuBg.fillRoundedRect(-100, 120, 200, 48, 12);
-    menuBg.lineStyle(2, 0x6b7a8c, 1);
-    menuBg.strokeRoundedRect(-100, 120, 200, 48, 12);
-    this.pausePopup.add(menuBg);
-
-    const menuText = this.scene.add.text(0, 144, "🏠 Main Menu", {
-      fontSize: "18px",
-      color: "#ffffff",
-      fontStyle: "bold",
-      resolution: 2,
-      fontFamily: "Manrope, system-ui, sans-serif",
-    }).setOrigin(0.5);
-    this.pausePopup.add(menuText);
-
-    const menuHit = new Phaser.Geom.Rectangle(-100, 120, 200, 48);
-    const menuBtn = this.scene.add.zone(0, 144, 200, 48)
-      .setInteractive({ hitArea: menuHit, useHandCursor: true });
-    this.pausePopup.add(menuBtn);
-    menuBtn.on("pointerdown", this.onMenu);
-    menuBtn.on("pointerover", () => {
-      menuBg.clear();
-      menuBg.fillStyle(0x5a6a7a, 1);
-      menuBg.fillRoundedRect(-100, 120, 200, 48, 12);
-      menuBg.lineStyle(2, 0x7a8a9a, 1);
-      menuBg.strokeRoundedRect(-100, 120, 200, 48, 12);
-    });
-    menuBtn.on("pointerout", () => {
-      menuBg.clear();
-      menuBg.fillStyle(0x4a5568, 1);
-      menuBg.fillRoundedRect(-100, 120, 200, 48, 12);
-      menuBg.lineStyle(2, 0x6b7a8c, 1);
-      menuBg.strokeRoundedRect(-100, 120, 200, 48, 12);
-    });
-
-    // Keyboard shortcuts hint
-    const shortcuts = this.scene.add.text(0, 185, "ESC to resume  •  R to restart", {
-      fontSize: "12px",
-      color: "#6b8aaa",
-      resolution: 2,
-      fontFamily: "Manrope, system-ui, sans-serif",
-    }).setOrigin(0.5);
-    this.pausePopup.add(shortcuts);
-
-    // Popup entrance animation
-    this.pausePopup.setScale(0.5);
-    this.pausePopup.setAlpha(0);
+  private _animatePopup(popup: Phaser.GameObjects.Container) {
+    popup.setScale(0.5).setAlpha(0);
     this.scene.tweens.add({
-      targets: this.pausePopup,
-      scale: 1,
-      alpha: 1,
-      duration: 300,
-      ease: "Back.easeOut",
+      targets: popup, scale: 1, alpha: 1, duration: 280, ease: "Back.easeOut",
     });
   }
 
@@ -499,13 +338,14 @@ export class UIManager {
       this.pausePopup = null as any;
     }
     this.isPaused = false;
-    // Update button icon back to pause
     const icon = this.pauseButton?.list[1] as Phaser.GameObjects.Text;
     if (icon) icon.setText("⏸");
   }
 
-  setStatus(text: string, color: string = "#a0b8cc") {
-    this.statusText.setText(text);
-    this.statusText.setColor(color);
+  setStatus(text: string, color = "#a0b8cc") {
+    if (this.statusText) {
+      this.statusText.setText(text);
+      this.statusText.setColor(color);
+    }
   }
 }

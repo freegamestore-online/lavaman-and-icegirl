@@ -1,182 +1,351 @@
-export type LevelObject = { x: number; y: number; width: number; height: number };
-export type HazardObject = LevelObject & { type: "water" | "lava" };
-export type GoalObject = LevelObject & { type: "fire" | "water" };
-export type GemObject = { x: number; y: number };
+/**
+ * GRID-BASED LEVEL SYSTEM
+ * ========================
+ * Canvas: 360 wide × 640 tall (9:16 portrait)
+ * These dimensions are the BASE size - they will be scaled
+ */
 
+export const COL_COUNT = 12;
+export const ROW_COUNT = 10;
+ 
+// Live canvas size — updated whenever Game.tsx resizes the Phaser canvas
+let _canvasWidth = 360;
+let _canvasHeight = 640;
+ 
+// Reference cell size (matches the original 360x640 portrait design) — used
+// only to keep fixed-size visual elements (platform thickness, gem size,
+// jump offset) looking consistent rather than stretching with the grid.
+const REF_COL_W = 360 / COL_COUNT; // 30
+const REF_ROW_H = 640 / ROW_COUNT; // 64
+ 
+export function setScaleFactor(width: number, height: number) {
+  _canvasWidth = width;
+  _canvasHeight = height;
+  console.log(`Canvas set to: ${width}x${height}`);
+}
+ 
+export function getCanvasDimensions() {
+  return { width: _canvasWidth, height: _canvasHeight };
+}
+ 
+function colW() {
+  return _canvasWidth / COL_COUNT;
+}
+ 
+function rowH() {
+  return _canvasHeight / ROW_COUNT;
+}
+ 
+// Uniform scale for elements that shouldn't stretch with aspect ratio changes
+function getUniformScale() {
+  return Math.min(colW() / REF_COL_W, rowH() / REF_ROW_H);
+}
+ 
+// Kept for backwards compatibility with any external callers
+export function getScaleFactor() {
+  return getUniformScale();
+}
+ 
+// Helper functions — grid coordinates resolve directly off live canvas size
+export const colX = (col: number) => (col - 0.5) * colW();
+export const rowY = (row: number) => row * rowH();
+export const colLeft = (col: number) => (col - 1) * colW();
+ 
+// Constants that depend on scale
+export function getPlatformH() { return 16 * getUniformScale(); }
+export function getHazardH() { return 10 * getUniformScale(); }
+export function getGoalW() { return 2 * colW(); }
+export function getGoalH() { return 2 * rowH(); }
+export function getGemSize() { return 22 * getUniformScale(); }
+ 
+// Types
+export type BlockDef = {
+  id: string;
+  col: number;
+  row: number;
+  span: number;
+};
+ 
+export type HazardDef = {
+  blockId: string;
+  type: "water" | "lava";
+  fromCol: number;
+  toCol: number;
+};
+ 
+export type GoalDef = {
+  col: number;
+  row: number;
+  type: "fire" | "water";
+};
+ 
+export type GemDef = {
+  col: number;
+  row: number;
+};
+ 
+export type PlayerStart = {
+  col: number;
+  row: number;
+};
+ 
 export type LevelDefinition = {
+  title: string;
+  fireStart: PlayerStart;
+  waterStart: PlayerStart;
+  blocks: BlockDef[];
+  hazards: HazardDef[];
+  goals: GoalDef[];
+  gems: GemDef[];
+};
+ 
+export type ResolvedBlock = { x: number; y: number; width: number; height: number };
+export type ResolvedHazard = ResolvedBlock & { type: "water" | "lava" };
+export type ResolvedGoal = ResolvedBlock & { type: "fire" | "water" };
+export type ResolvedGem = { x: number; y: number };
+export type ResolvedLevel = {
   title: string;
   fireStart: { x: number; y: number };
   waterStart: { x: number; y: number };
-  platforms: LevelObject[];
-  hazards: HazardObject[];
-  goals: GoalObject[];
-  gems: GemObject[];
+  platforms: ResolvedBlock[];
+  hazards: ResolvedHazard[];
+  goals: ResolvedGoal[];
+  gems: ResolvedGem[];
 };
-export const levels: LevelDefinition[] = [
+ 
+export function resolveLevel(def: LevelDefinition): ResolvedLevel {
+  const cw = colW();
+  const rh = rowH();
+  const platformH = getPlatformH();
+  const hazardH = getHazardH();
+  const goalW = 2 * cw;
+  const goalH = 2 * rh;
+  const uScale = getUniformScale();
+ 
+  const blockMap = new Map<string, BlockDef>();
+  def.blocks.forEach(b => blockMap.set(b.id, b));
+ 
+  const platforms: ResolvedBlock[] = def.blocks.map(b => ({
+    x: colLeft(b.col) + (b.span * cw) / 2,
+    y: rowY(b.row),
+    width: b.span * cw,
+    height: platformH,
+  }));
+ 
+  const hazards: ResolvedHazard[] = def.hazards.map(h => {
+    const block = blockMap.get(h.blockId);
+    if (!block) throw new Error(`Unknown block id "${h.blockId}"`);
+    const blockLeft = colLeft(block.col);
+    const hLeft = blockLeft + (h.fromCol - 1) * cw;
+    const hRight = blockLeft + h.toCol * cw;
+    const hWidth = hRight - hLeft;
+    return {
+      x: hLeft + hWidth / 2,
+      y: rowY(block.row) - hazardH / 2,
+      width: hWidth,
+      height: hazardH,
+      type: h.type,
+    };
+  });
+ 
+  const goals: ResolvedGoal[] = def.goals.map(gl => ({
+    x: colLeft(gl.col) + goalW / 2,
+    y: rowY(gl.row) - goalH / 2,
+    width: goalW,
+    height: goalH,
+    type: gl.type,
+  }));
+ 
+  const gems: ResolvedGem[] = def.gems.map(gm => ({
+    x: colX(gm.col),
+    y: rowY(gm.row) - rh / 2,
+  }));
+ 
+  const fireStart = {
+    x: colX(def.fireStart.col),
+    y: rowY(def.fireStart.row) - 30 * uScale,
+  };
+  const waterStart = {
+    x: colX(def.waterStart.col),
+    y: rowY(def.waterStart.row) - 30 * uScale,
+  };
+ 
+  return { title: def.title, fireStart, waterStart, platforms, hazards, goals, gems };
+}
+ 
+// Level definitions using grid-based system
+export const levelDefs: LevelDefinition[] = [
   {
     title: "Level 1: Forest Run",
-    fireStart: { x: 200, y: 520 }, // Changed from 120 to 200 (further from goal at 90)
-    waterStart: { x: 760, y: 260 }, // Changed from 840 to 760 (further from goal at 860)
-    platforms: [
-      { x: 480, y: 620, width: 960, height: 40 },
-      { x: 220, y: 490, width: 280, height: 20 },
-      { x: 480, y: 430, width: 140, height: 20 },
-      { x: 700, y: 380, width: 280, height: 20 },
-      { x: 560, y: 320, width: 100, height: 20 },
-      { x: 420, y: 260, width: 220, height: 20 },
+    fireStart: { col: 2.5, row: 8.5 }, // ~ x:200, y:520
+    waterStart: { col: 9.5, row: 4.5 }, // ~ x:760, y:260
+    blocks: [
+      // Ground
+      { id: "ground", col: 1, row: 9.5, span: 12 },
+      // Platforms
+      { id: "p1", col: 3, row: 7.5, span: 3.5 },
+      { id: "p2", col: 6, row: 6.5, span: 1.75 },
+      { id: "p3", col: 8, row: 5.5, span: 3.5 },
+      { id: "p4", col: 7, row: 4.5, span: 1.25 },
+      { id: "p5", col: 5, row: 3.5, span: 2.75 },
     ],
     hazards: [
-      { x: 360, y: 600, width: 100, height: 40, type: "water" },
-      { x: 660, y: 560, width: 280, height: 40, type: "lava" },
+      { blockId: "p1", type: "water", fromCol: 3, toCol: 4 },
+      { blockId: "p3", type: "lava", fromCol: 8, toCol: 9 },
     ],
     goals: [
-      { x: 90, y: 570, width: 100, height: 80, type: "fire" },
-      { x: 860, y: 300, width: 100, height: 80, type: "water" },
+      { col: 1.5, row: 8, type: "fire" },
+      { col: 10.5, row: 4, type: "water" },
     ],
     gems: [
-      { x: 420, y: 400 },
-      { x: 560, y: 280 },
-      { x: 480, y: 210 },
+      { col: 5.5, row: 6 },
+      { col: 7, row: 4 },
+      { col: 6, row: 3 },
     ],
   },
   {
     title: "Level 2: Crystal Cavern",
-    fireStart: { x: 800, y: 620},
-    waterStart: { x: 750, y: 620 },
-    platforms: [
-      { x: 480, y: 620, width: 960, height: 40 },
-      { x: 160, y: 490, width: 220, height: 20 },
-      { x: 420, y: 420, width: 240, height: 20 },
-      { x: 700, y: 350, width: 240, height: 20 },
-      { x: 480, y: 270, width: 200, height: 20 },
-      { x: 200, y: 200, width: 160, height: 20 },
-      { x: 840, y: 200, width: 160, height: 20 },
+    fireStart: { col: 10, row: 9.5 },
+    waterStart: { col: 9.5, row: 9.5 },
+    blocks: [
+      { id: "ground", col: 1, row: 9.5, span: 12 },
+      { id: "p1", col: 2, row: 7.5, span: 2.75 },
+      { id: "p2", col: 5.5, row: 6.5, span: 3 },
+      { id: "p3", col: 8.5, row: 5.5, span: 3 },
+      { id: "p4", col: 6, row: 4.5, span: 2.5 },
+      { id: "p5", col: 2.5, row: 3.5, span: 2 },
+      { id: "p6", col: 10.5, row: 3.5, span: 2 },
     ],
     hazards: [
-      { x: 340, y: 610, width: 300, height: 40, type: "lava" },
-      { x: 700, y: 540, width: 220, height: 40, type: "water" },
+      { blockId: "p1", type: "lava", fromCol: 2, toCol: 3 },
+      { blockId: "p3", type: "water", fromCol: 8.5, toCol: 9.5 },
     ],
     goals: [
-      { x: 90, y: 560, width: 100, height: 80, type: "fire" },
-      { x: 840, y: 130, width: 100, height: 80, type: "water" },
+      { col: 1.5, row: 8, type: "fire" },
+      { col: 10.5, row: 2.5, type: "water" },
     ],
     gems: [
-      { x: 160, y: 450 },
-      { x: 480, y: 370 },
-      { x: 700, y: 300 },
-      { x: 480, y: 220 },
+      { col: 2, row: 7 },
+      { col: 6, row: 5.5 },
+      { col: 8.5, row: 4.5 },
+      { col: 6, row: 3.5 },
     ],
   },
   {
     title: "Level 3: Lava Bridge",
-    fireStart: { x: 60, y: 200 },
-    waterStart: { x: 900, y: 560 },
-    platforms: [
-      { x: 480, y: 620, width: 960, height: 40 },
-      { x: 80,  y: 240, width: 160, height: 20 },
-      { x: 260, y: 320, width: 160, height: 20 },
-      { x: 480, y: 240, width: 120, height: 20 },
-      { x: 700, y: 350, width: 160, height: 20 },
-      { x: 880, y: 420, width: 160, height: 20 },
-      { x: 500, y: 480, width: 200, height: 20 },
-      { x: 200, y: 540, width: 160, height: 20 },
+    fireStart: { col: 1, row: 3.5 },
+    waterStart: { col: 11, row: 8.5 },
+    blocks: [
+      { id: "ground", col: 1, row: 9.5, span: 12 },
+      { id: "p1", col: 1, row: 4, span: 2 },
+      { id: "p2", col: 3.5, row: 5, span: 2 },
+      { id: "p3", col: 6, row: 4, span: 1.5 },
+      { id: "p4", col: 8.5, row: 5.5, span: 2 },
+      { id: "p5", col: 10.5, row: 6.5, span: 2 },
+      { id: "p6", col: 6.5, row: 7.5, span: 2.5 },
+      { id: "p7", col: 2.5, row: 8, span: 2 },
     ],
     hazards: [
-      { x: 480, y: 600, width: 500, height: 40, type: "lava" },
-      { x: 170, y: 390, width: 200, height: 20, type: "water" },
-      // { x: 650, y: 540, width: 200, height: 40, type: "lava" },
+      { blockId: "ground", type: "lava", fromCol: 6, toCol: 11 },
+      { blockId: "p2", type: "water", fromCol: 3.5, toCol: 4.5 },
+      { blockId: "p6", type: "lava", fromCol: 6.5, toCol: 7.5 },
     ],
     goals: [
-      { x: 880, y: 330, width: 100, height: 80, type: "fire" },
-      { x: 80,  y: 170, width: 100, height: 80, type: "water" },
+      { col: 11, row: 5, type: "fire" },
+      { col: 1.5, row: 2.5, type: "water" },
     ],
     gems: [
-      { x: 260, y: 285 },
-      { x: 480, y: 205 },
-      { x: 700, y: 285 },
-      { x: 380, y: 425 },
-      { x: 200, y: 505 },
+      { col: 3.5, row: 4.5 },
+      { col: 6, row: 3.5 },
+      { col: 8.5, row: 5 },
+      { col: 5, row: 6.5 },
+      { col: 2.5, row: 7.5 },
     ],
   },
   {
     title: "Level 4: Twin Towers",
-    fireStart: { x: 80, y: 560 },
-    waterStart: { x: 880, y: 560 },
-    platforms: [
-      { x: 480, y: 620, width: 960, height: 40 },
+    fireStart: { col: 1.5, row: 8.5 },
+    waterStart: { col: 10.5, row: 8.5 },
+    blocks: [
+      { id: "ground", col: 1, row: 9.5, span: 12 },
       // Left tower
-      { x: 100, y: 500, width: 160, height: 20 },
-      { x: 100, y: 420, width: 160, height: 20 },
-      { x: 100, y: 340, width: 160, height: 20 },
-      { x: 100, y: 260, width: 160, height: 20 },
-      { x: 100, y: 180, width: 160, height: 20 },
+      { id: "l1", col: 1.5, row: 8, span: 2 },
+      { id: "l2", col: 1.5, row: 6.5, span: 2 },
+      { id: "l3", col: 1.5, row: 5, span: 2 },
+      { id: "l4", col: 1.5, row: 3.5, span: 2 },
+      { id: "l5", col: 1.5, row: 2, span: 2 },
       // Right tower
-      { x: 860, y: 500, width: 160, height: 20 },
-      { x: 860, y: 420, width: 160, height: 20 },
-      { x: 860, y: 340, width: 160, height: 20 },
-      { x: 860, y: 260, width: 160, height: 20 },
-      { x: 860, y: 180, width: 160, height: 20 },
+      { id: "r1", col: 10.5, row: 8, span: 2 },
+      { id: "r2", col: 10.5, row: 6.5, span: 2 },
+      { id: "r3", col: 10.5, row: 5, span: 2 },
+      { id: "r4", col: 10.5, row: 3.5, span: 2 },
+      { id: "r5", col: 10.5, row: 2, span: 2 },
       // Middle bridges
-      { x: 480, y: 460, width: 220, height: 20 },
-      { x: 480, y: 300, width: 220, height: 20 },
+      { id: "b1", col: 6, row: 7, span: 2.75 },
+      { id: "b2", col: 6, row: 4.5, span: 2.75 },
     ],
     hazards: [
-      { x: 340, y: 600, width: 250, height: 40, type: "water" },
-      { x: 620, y: 600, width: 200, height: 40, type: "lava" },
-      { x: 480, y: 530, width: 220, height: 20, type: "lava" },
+      { blockId: "ground", type: "water", fromCol: 4, toCol: 7 },
+      { blockId: "ground", type: "lava", fromCol: 8, toCol: 10 },
+      { blockId: "b1", type: "lava", fromCol: 6, toCol: 7.5 },
     ],
     goals: [
-      { x: 100, y: 110, width: 100, height: 80, type: "fire" },
-      { x: 860, y: 110, width: 100, height: 80, type: "water" },
+      { col: 1.5, row: 1.5, type: "fire" },
+      { col: 10.5, row: 1.5, type: "water" },
     ],
     gems: [
-      { x: 480, y: 425 },
-      { x: 480, y: 265 },
-      { x: 100, y: 305 },
-      { x: 860, y: 225 },
-      { x: 340, y: 560 },
+      { col: 6, row: 6.5 },
+      { col: 6, row: 4 },
+      { col: 1.5, row: 4.5 },
+      { col: 10.5, row: 3.5 },
+      { col: 4, row: 8.5 },
     ],
   },
   {
     title: "Level 5: The Summit",
-    fireStart: { x: 60, y: 560 },
-    waterStart: { x: 900, y: 560 },
-    platforms: [
-      { x: 480, y: 620, width: 960, height: 40 },
+    fireStart: { col: 1, row: 8.5 },
+    waterStart: { col: 11, row: 8.5 },
+    blocks: [
+      { id: "ground", col: 1, row: 9.5, span: 12 },
       // Zigzag ascent left side
-      { x: 160, y: 530, width: 200, height: 20 },
-      { x: 360, y: 460, width: 160, height: 20 },
-      { x: 180, y: 390, width: 180, height: 20 },
-      { x: 380, y: 320, width: 160, height: 20 },
-      { x: 160, y: 250, width: 200, height: 20 },
+      { id: "p1", col: 2, row: 8, span: 2.25 },
+      { id: "p2", col: 4.5, row: 7, span: 2 },
+      { id: "p3", col: 2.5, row: 6, span: 2.5 },
+      { id: "p4", col: 5, row: 5, span: 2 },
+      { id: "p5", col: 2.5, row: 4, span: 2.75 },
       // Zigzag ascent right side
-      { x: 800, y: 530, width: 200, height: 20 },
-      { x: 600, y: 460, width: 160, height: 20 },
-      { x: 780, y: 390, width: 180, height: 20 },
-      { x: 580, y: 320, width: 160, height: 20 },
-      { x: 800, y: 250, width: 200, height: 20 },
+      { id: "p6", col: 9.5, row: 8, span: 2.25 },
+      { id: "p7", col: 7.5, row: 7, span: 2 },
+      { id: "p8", col: 9.5, row: 6, span: 2.5 },
+      { id: "p9", col: 7.5, row: 5, span: 2 },
+      { id: "p10", col: 9.5, row: 4, span: 2.75 },
       // Summit center
-      { x: 480, y: 180, width: 200, height: 20 },
+      { id: "p11", col: 6, row: 3.5, span: 3 },
+      { id: "p12", col: 5, row: 2.5, span: 2.5 },
+      { id: "p13", col: 7.5, row: 2.5, span: 2.5 },
+      { id: "p14", col: 6, row: 1.5, span: 3.75 },
     ],
     hazards: [
-      { x: 480, y: 600, width: 400, height: 40, type: "lava" },
-      { x: 270, y: 430, width: 140, height: 20, type: "water" },
-      { x: 690, y: 430, width: 140, height: 20, type: "lava" },
-      { x: 480, y: 360, width: 120, height: 20, type: "water" },
+      { blockId: "ground", type: "lava", fromCol: 6, toCol: 8 },
+      { blockId: "p1", type: "water", fromCol: 2, toCol: 3 },
+      { blockId: "p6", type: "lava", fromCol: 9.5, toCol: 10.5 },
+      { blockId: "p2", type: "water", fromCol: 4.5, toCol: 5.5 },
+      { blockId: "p7", type: "lava", fromCol: 7.5, toCol: 8.5 },
+      { blockId: "p4", type: "water", fromCol: 5, toCol: 6 },
+      { blockId: "p9", type: "lava", fromCol: 7.5, toCol: 8.5 },
+      { blockId: "p11", type: "water", fromCol: 6, toCol: 6.5 },
     ],
     goals: [
-      { x: 60,  y: 175, width: 100, height: 80, type: "fire" },
-      { x: 900, y: 175, width: 100, height: 80, type: "water" },
+      { col: 1, row: 2.5, type: "fire" },
+      { col: 11, row: 2.5, type: "water" },
     ],
     gems: [
-      { x: 360, y: 425 },
-      { x: 600, y: 425 },
-      { x: 380, y: 285 },
-      { x: 580, y: 285 },
-      { x: 480, y: 145 },
+      { col: 3, row: 4.5 },
+      { col: 9, row: 4.5 },
+      { col: 4.5, row: 6.5 },
+      { col: 7.5, row: 6.5 },
+      { col: 6, row: 2.5 },
+      { col: 6, row: 1 },
     ],
   },
-  
 ];
-
-

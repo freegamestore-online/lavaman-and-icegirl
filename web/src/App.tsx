@@ -1,5 +1,6 @@
+// App.tsx
 import { GameShell, GameTopbar } from "@freegamestore/games";
-import { Game } from "./Game";  // Changed from "./components/Game"
+import { Game } from "./Game";
 
 export default function App() {
   return (
