@@ -333,7 +333,4 @@ export class FireAndWaterScene extends Phaser.Scene {
     });
   }
 
-  private get gameOverPopup() { return this.uiManager.gameOverPopup; }
-  private get pausePopup() { return this.uiManager.pausePopup; }
-  private set pausePopup(value) { this.uiManager.pausePopup = value; }
 }

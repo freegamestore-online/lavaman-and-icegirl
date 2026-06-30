@@ -12,7 +12,7 @@ export class MenuScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale;
     const cx = width / 2;
-    const cy = height / 2;
+    // const cy = height / 2;
 
     // Background
     const bg = this.add.graphics();

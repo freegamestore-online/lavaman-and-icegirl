@@ -59,7 +59,7 @@ export function MobileControls({
         e.stopPropagation();
         onControl(getResetState());
       },
-      onMouseLeave: (e: React.MouseEvent) => {
+      onMouseLeave: () => {
         onControl(getResetState());
       }
     };
