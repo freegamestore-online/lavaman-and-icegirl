@@ -4,7 +4,7 @@ import { Game } from "./Game";
 
 export default function App() {
   return (
-    <GameShell topbar={<GameTopbar title="Fire and Water" score={0} />}>
+    <GameShell topbar={<GameTopbar title="Lavaman and Icegirl" score={0} />}>
       <Game />
     </GameShell>
   );

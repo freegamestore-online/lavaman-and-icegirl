@@ -1,14 +1,14 @@
 {
-  "name": "fireboyandwatergirl",
+  "name": "lavaman-and-icegirl",
   "private": true,
   "packageManager": "pnpm@10.30.3",
   "engines": { "node": ">=22" },
   "pnpm": { "onlyBuiltDependencies": ["esbuild"] },
   "scripts": {
-    "dev": "pnpm --filter @fireboyandwatergirl/web dev",
-    "build": "pnpm --filter @fireboyandwatergirl/web build",
-    "preview": "pnpm --filter @fireboyandwatergirl/web preview",
-    "typecheck": "pnpm --filter @fireboyandwatergirl/web exec tsc -b",
-    "test": "pnpm --filter @fireboyandwatergirl/web test"
+    "dev": "pnpm --filter @lavaman-and-icegirl/web dev",
+    "build": "pnpm --filter @lavaman-and-icegirl/web build",
+    "preview": "pnpm --filter @lavaman-and-icegirl/web preview",
+    "typecheck": "pnpm --filter @lavaman-and-icegirl/web exec tsc -b",
+    "test": "pnpm --filter @lavaman-and-icegirl/web test"
   }
 }

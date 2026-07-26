@@ -10,7 +10,7 @@ export class CollisionManager {
   private watergirl: Phaser.Physics.Arcade.Sprite;
   private platforms: Phaser.Physics.Arcade.StaticGroup;
   private hazards: Phaser.Physics.Arcade.StaticGroup;
-  private goals: Phaser.Physics.Arcade.StaticGroup;
+  private goalPlatforms: Phaser.Physics.Arcade.StaticGroup;
   private gems: Phaser.Physics.Arcade.StaticGroup;
 
   constructor(
@@ -19,7 +19,7 @@ export class CollisionManager {
     watergirl: Phaser.Physics.Arcade.Sprite,
     platforms: Phaser.Physics.Arcade.StaticGroup,
     hazards: Phaser.Physics.Arcade.StaticGroup,
-    goals: Phaser.Physics.Arcade.StaticGroup,
+    goalPlatforms: Phaser.Physics.Arcade.StaticGroup,
     gems: Phaser.Physics.Arcade.StaticGroup
   ) {
     this.scene = scene;
@@ -27,13 +27,15 @@ export class CollisionManager {
     this.watergirl = watergirl;
     this.platforms = platforms;
     this.hazards = hazards;
-    this.goals = goals;
+    this.goalPlatforms = goalPlatforms;
     this.gems = gems;
   }
 
   setup(onHazard: HazardHandler, onGoal: GoalHandler, onGem: GemHandler) {
     this.scene.physics.add.collider(this.fireboy, this.platforms);
     this.scene.physics.add.collider(this.watergirl, this.platforms);
+    this.scene.physics.add.collider(this.fireboy, this.goalPlatforms);
+    this.scene.physics.add.collider(this.watergirl, this.goalPlatforms);
 
     this.scene.physics.add.overlap(this.fireboy, this.hazards, (_, hz) => {
       onHazard("fire", (hz as Phaser.GameObjects.GameObject).getData("type") as string);
@@ -41,10 +43,10 @@ export class CollisionManager {
     this.scene.physics.add.overlap(this.watergirl, this.hazards, (_, hz) => {
       onHazard("water", (hz as Phaser.GameObjects.GameObject).getData("type") as string);
     });
-    this.scene.physics.add.overlap(this.fireboy, this.goals, (_, gl) => {
+    this.scene.physics.add.overlap(this.fireboy, this.goalPlatforms, (_, gl) => {
       onGoal("fire", (gl as Phaser.GameObjects.GameObject).getData("type") as string);
     });
-    this.scene.physics.add.overlap(this.watergirl, this.goals, (_, gl) => {
+    this.scene.physics.add.overlap(this.watergirl, this.goalPlatforms, (_, gl) => {
       onGoal("water", (gl as Phaser.GameObjects.GameObject).getData("type") as string);
     });
     this.scene.physics.add.overlap(this.fireboy, this.gems, (_, gm) => {

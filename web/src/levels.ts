@@ -54,8 +54,8 @@ export const colLeft = (col: number) => (col - 1) * colW();
 // Constants that depend on scale
 export function getPlatformH() { return 16 * getUniformScale(); }
 export function getHazardH() { return 10 * getUniformScale(); }
-export function getGoalW() { return 2 * colW(); }
-export function getGoalH() { return 2 * rowH(); }
+export function getGoalW() { return 1.1 * colW(); }
+export function getGoalH() { return 0.625 * rowH(); }
 export function getGemSize() { return 22 * getUniformScale(); }
  
 // Types
@@ -118,8 +118,8 @@ export function resolveLevel(def: LevelDefinition): ResolvedLevel {
   const rh = rowH();
   const platformH = getPlatformH();
   const hazardH = getHazardH();
-  const goalW = 2 * cw;
-  const goalH = 2 * rh;
+  const goalW = getGoalW();
+  const goalH = getGoalH();
   const uScale = getUniformScale();
  
   const blockMap = new Map<string, BlockDef>();
@@ -135,9 +135,23 @@ export function resolveLevel(def: LevelDefinition): ResolvedLevel {
   const hazards: ResolvedHazard[] = def.hazards.map(h => {
     const block = blockMap.get(h.blockId);
     if (!block) throw new Error(`Unknown block id "${h.blockId}"`);
+
+    let fromCol = Math.min(h.fromCol, h.toCol);
+    let toCol = Math.max(h.fromCol, h.toCol);
+
+    fromCol = Math.max(1, Math.min(fromCol, block.span));
+    toCol = Math.max(1, Math.min(toCol, block.span));
+
+    const minSpanCols = Math.min(0.35, block.span);
+    let spanCols = Math.max(toCol - fromCol, minSpanCols);
+    if (fromCol + spanCols > block.span) {
+      fromCol = Math.max(1, block.span - spanCols);
+    }
+    toCol = fromCol + spanCols;
+
     const blockLeft = colLeft(block.col);
-    const hLeft = blockLeft + (h.fromCol - 1) * cw;
-    const hRight = blockLeft + h.toCol * cw;
+    const hLeft = blockLeft + (fromCol - 1) * cw;
+    const hRight = blockLeft + toCol * cw;
     const hWidth = hRight - hLeft;
     return {
       x: hLeft + hWidth / 2,
@@ -183,15 +197,16 @@ export const levelDefs: LevelDefinition[] = [
       // Ground
       { id: "ground", col: 1, row: 9.5, span: 12 },
       // Platforms
-      { id: "p1", col: 3, row: 7.5, span: 3.5 },
-      { id: "p2", col: 6, row: 6.5, span: 1.75 },
-      { id: "p3", col: 8, row: 5.5, span: 3.5 },
-      { id: "p4", col: 7, row: 4.5, span: 1.25 },
-      { id: "p5", col: 5, row: 3.5, span: 2.75 },
+      { id: "p1", col: 7, row: 8.5, span: 1},
+      { id: "p2", col: 3.5, row: 7.5, span: 3.5 },
+      { id: "p3", col: 4.5, row: 6.5, span: 1.5 },
+      { id: "p4", col: 7.5, row: 5.5, span: 3.5 },
+      { id: "p5", col: 7, row: 4.5, span: 1.75 },
+      { id: "p6", col: 5, row: 3.5, span: 2.75 },
     ],
     hazards: [
-      { blockId: "p1", type: "water", fromCol: 3, toCol: 4 },
-      { blockId: "p3", type: "lava", fromCol: 8, toCol: 9 },
+      { blockId: "p2", type: "water", fromCol: 3, toCol: 3.1},
+      { blockId: "p5", type: "lava", fromCol: 1, toCol: 1.25},
     ],
     goals: [
       { col: 1.5, row: 8, type: "fire" },
@@ -199,67 +214,67 @@ export const levelDefs: LevelDefinition[] = [
     ],
     gems: [
       { col: 5.5, row: 6 },
-      { col: 7, row: 4 },
+      { col: 7, row: 4.5 },
       { col: 6, row: 3 },
     ],
   },
   {
-    title: "Level 2: Crystal Cavern",
-    fireStart: { col: 10, row: 9.5 },
-    waterStart: { col: 9.5, row: 9.5 },
+    title: "Level 2: Crystal Steps",
+    fireStart: { col: 2, row: 8.5 },
+    waterStart: { col: 10.5, row: 8.5 },
     blocks: [
       { id: "ground", col: 1, row: 9.5, span: 12 },
-      { id: "p1", col: 2, row: 7.5, span: 2.75 },
-      { id: "p2", col: 5.5, row: 6.5, span: 3 },
-      { id: "p3", col: 8.5, row: 5.5, span: 3 },
-      { id: "p4", col: 6, row: 4.5, span: 2.5 },
-      { id: "p5", col: 2.5, row: 3.5, span: 2 },
-      { id: "p6", col: 10.5, row: 3.5, span: 2 },
+      { id: "p1", col: 2, row: 8, span: 2.5 },
+      { id: "p2", col: 5, row: 7, span: 2.5 },
+      { id: "p3", col: 8.5, row: 8, span: 2.5 },
+      { id: "p4", col: 9.5, row: 6.5, span: 2 },
+      { id: "p5", col: 6, row: 5.5, span: 2.5 },
+      { id: "p6", col: 3.5, row: 6.5, span: 2 },
+      { id: "p7", col: 6, row: 4, span: 3 },
     ],
     hazards: [
-      { blockId: "p1", type: "lava", fromCol: 2, toCol: 3 },
-      { blockId: "p3", type: "water", fromCol: 8.5, toCol: 9.5 },
+      { blockId: "p2", type: "water", fromCol: 1.15, toCol: 1.95 },
+      { blockId: "p5", type: "lava", fromCol: 1.4, toCol: 2.25 },
+      { blockId: "p3", type: "water", fromCol: 2, toCol: 2.45 },
     ],
     goals: [
-      { col: 1.5, row: 8, type: "fire" },
-      { col: 10.5, row: 2.5, type: "water" },
+      { col: 1.5, row: 7.5, type: "fire" },
+      { col: 10.5, row: 3.5, type: "water" },
     ],
     gems: [
-      { col: 2, row: 7 },
-      { col: 6, row: 5.5 },
-      { col: 8.5, row: 4.5 },
-      { col: 6, row: 3.5 },
+      { col: 3, row: 7.5 },
+      { col: 6, row: 6 },
+      { col: 9, row: 5.5 },
+      { col: 6.5, row: 3.5 },
     ],
   },
   {
-    title: "Level 3: Lava Bridge",
-    fireStart: { col: 1, row: 3.5 },
+    title: "Level 3: Split Switchbacks",
+    fireStart: { col: 1.5, row: 8.5 },
     waterStart: { col: 11, row: 8.5 },
     blocks: [
       { id: "ground", col: 1, row: 9.5, span: 12 },
-      { id: "p1", col: 1, row: 4, span: 2 },
-      { id: "p2", col: 3.5, row: 5, span: 2 },
-      { id: "p3", col: 6, row: 4, span: 1.5 },
-      { id: "p4", col: 8.5, row: 5.5, span: 2 },
-      { id: "p5", col: 10.5, row: 6.5, span: 2 },
-      { id: "p6", col: 6.5, row: 7.5, span: 2.5 },
-      { id: "p7", col: 2.5, row: 8, span: 2 },
+      { id: "p1", col: 2.5, row: 8, span: 2.5 },
+      { id: "p2", col: 5, row: 7, span: 2 },
+      { id: "p3", col: 7.5, row: 6, span: 2.5 },
+      { id: "p4", col: 10, row: 5, span: 2 },
+      { id: "p5", col: 8, row: 4, span: 2 },
+      { id: "p6", col: 5.5, row: 3, span: 2.5 },
+      { id: "p7", col: 3, row: 4.5, span: 2 },
     ],
     hazards: [
-      { blockId: "ground", type: "lava", fromCol: 6, toCol: 11 },
-      { blockId: "p2", type: "water", fromCol: 3.5, toCol: 4.5 },
-      { blockId: "p6", type: "lava", fromCol: 6.5, toCol: 7.5 },
+      { blockId: "p1", type: "lava", fromCol: 1.4, toCol: 2.15 },
+      { blockId: "p3", type: "water", fromCol: 1.9, toCol: 2.45 },
+      { blockId: "p6", type: "lava", fromCol: 1.3, toCol: 2.05 },
     ],
     goals: [
-      { col: 11, row: 5, type: "fire" },
-      { col: 1.5, row: 2.5, type: "water" },
+      { col: 10.5, row: 4.5, type: "fire" },
+      { col: 1.5, row: 3.5, type: "water" },
     ],
     gems: [
-      { col: 3.5, row: 4.5 },
-      { col: 6, row: 3.5 },
-      { col: 8.5, row: 5 },
-      { col: 5, row: 6.5 },
-      { col: 2.5, row: 7.5 },
+      { col: 4.5, row: 6.5 },
+      { col: 8, row: 5.5 },
+      { col: 6, row: 2.5 },
     ],
   },
   {
@@ -268,84 +283,66 @@ export const levelDefs: LevelDefinition[] = [
     waterStart: { col: 10.5, row: 8.5 },
     blocks: [
       { id: "ground", col: 1, row: 9.5, span: 12 },
-      // Left tower
       { id: "l1", col: 1.5, row: 8, span: 2 },
       { id: "l2", col: 1.5, row: 6.5, span: 2 },
       { id: "l3", col: 1.5, row: 5, span: 2 },
       { id: "l4", col: 1.5, row: 3.5, span: 2 },
-      { id: "l5", col: 1.5, row: 2, span: 2 },
-      // Right tower
       { id: "r1", col: 10.5, row: 8, span: 2 },
       { id: "r2", col: 10.5, row: 6.5, span: 2 },
       { id: "r3", col: 10.5, row: 5, span: 2 },
       { id: "r4", col: 10.5, row: 3.5, span: 2 },
-      { id: "r5", col: 10.5, row: 2, span: 2 },
-      // Middle bridges
       { id: "b1", col: 6, row: 7, span: 2.75 },
       { id: "b2", col: 6, row: 4.5, span: 2.75 },
     ],
     hazards: [
-      { blockId: "ground", type: "water", fromCol: 4, toCol: 7 },
-      { blockId: "ground", type: "lava", fromCol: 8, toCol: 10 },
-      { blockId: "b1", type: "lava", fromCol: 6, toCol: 7.5 },
+      { blockId: "ground", type: "water", fromCol: 4.25, toCol: 5.75 },
+      { blockId: "ground", type: "lava", fromCol: 7.25, toCol: 8.75 },
+      { blockId: "b1", type: "lava", fromCol: 1.45, toCol: 2.25 },
+      { blockId: "b2", type: "water", fromCol: 1.2, toCol: 1.95 },
     ],
     goals: [
-      { col: 1.5, row: 1.5, type: "fire" },
-      { col: 10.5, row: 1.5, type: "water" },
+      { col: 1.5, row: 2.5, type: "fire" },
+      { col: 10.5, row: 2.5, type: "water" },
     ],
     gems: [
       { col: 6, row: 6.5 },
       { col: 6, row: 4 },
       { col: 1.5, row: 4.5 },
-      { col: 10.5, row: 3.5 },
-      { col: 4, row: 8.5 },
+      { col: 10.5, row: 4.5 },
     ],
   },
   {
-    title: "Level 5: The Summit",
-    fireStart: { col: 1, row: 8.5 },
+    title: "Level 5: Final Crossing",
+    fireStart: { col: 1.5, row: 8.5 },
     waterStart: { col: 11, row: 8.5 },
     blocks: [
       { id: "ground", col: 1, row: 9.5, span: 12 },
-      // Zigzag ascent left side
-      { id: "p1", col: 2, row: 8, span: 2.25 },
-      { id: "p2", col: 4.5, row: 7, span: 2 },
-      { id: "p3", col: 2.5, row: 6, span: 2.5 },
-      { id: "p4", col: 5, row: 5, span: 2 },
-      { id: "p5", col: 2.5, row: 4, span: 2.75 },
-      // Zigzag ascent right side
-      { id: "p6", col: 9.5, row: 8, span: 2.25 },
-      { id: "p7", col: 7.5, row: 7, span: 2 },
-      { id: "p8", col: 9.5, row: 6, span: 2.5 },
-      { id: "p9", col: 7.5, row: 5, span: 2 },
-      { id: "p10", col: 9.5, row: 4, span: 2.75 },
-      // Summit center
-      { id: "p11", col: 6, row: 3.5, span: 3 },
-      { id: "p12", col: 5, row: 2.5, span: 2.5 },
-      { id: "p13", col: 7.5, row: 2.5, span: 2.5 },
-      { id: "p14", col: 6, row: 1.5, span: 3.75 },
+      { id: "p1", col: 2.5, row: 8, span: 2.5 },
+      { id: "p2", col: 5.5, row: 7, span: 2.5 },
+      { id: "p3", col: 8.5, row: 8, span: 2.5 },
+      { id: "p4", col: 9.5, row: 6.5, span: 2 },
+      { id: "p5", col: 6.5, row: 5.5, span: 2 },
+      { id: "p6", col: 3.5, row: 6.25, span: 2 },
+      { id: "p7", col: 4.5, row: 4.25, span: 2.25 },
+      { id: "p8", col: 7.75, row: 3.25, span: 2.5 },
     ],
     hazards: [
-      { blockId: "ground", type: "lava", fromCol: 6, toCol: 8 },
-      { blockId: "p1", type: "water", fromCol: 2, toCol: 3 },
-      { blockId: "p6", type: "lava", fromCol: 9.5, toCol: 10.5 },
-      { blockId: "p2", type: "water", fromCol: 4.5, toCol: 5.5 },
-      { blockId: "p7", type: "lava", fromCol: 7.5, toCol: 8.5 },
-      { blockId: "p4", type: "water", fromCol: 5, toCol: 6 },
-      { blockId: "p9", type: "lava", fromCol: 7.5, toCol: 8.5 },
-      { blockId: "p11", type: "water", fromCol: 6, toCol: 6.5 },
+      { blockId: "p2", type: "water", fromCol: 1.25, toCol: 2.15 },
+      { blockId: "p3", type: "lava", fromCol: 1.3, toCol: 2.2 },
+      { blockId: "p5", type: "lava", fromCol: 1.1, toCol: 1.7 },
+      { blockId: "p7", type: "water", fromCol: 1.35, toCol: 2.1 },
     ],
     goals: [
-      { col: 1, row: 2.5, type: "fire" },
-      { col: 11, row: 2.5, type: "water" },
+      { col: 1.5, row: 3.75, type: "fire" },
+      { col: 10.5, row: 2.75, type: "water" },
     ],
     gems: [
-      { col: 3, row: 4.5 },
-      { col: 9, row: 4.5 },
-      { col: 4.5, row: 6.5 },
-      { col: 7.5, row: 6.5 },
-      { col: 6, row: 2.5 },
-      { col: 6, row: 1 },
+      { col: 3, row: 7.25 },
+      { col: 6.5, row: 6.25 },
+      { col: 9.5, row: 5.75 },
+      { col: 5, row: 3.75 },
+      { col: 8.25, row: 2.75 },
     ],
   },
 ];
+  

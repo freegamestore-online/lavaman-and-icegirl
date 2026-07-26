@@ -1,8 +1,8 @@
-# fireboyandwatergirl
+# lavaman-and-icegirl
 
 A free game on FreeGameStore.
 
-- Subdomain: `fireboyandwatergirl.freegamestore.online`
+- Subdomain: `lavaman-and-icegirl.freegamestore.online`
 - Dev: `pnpm install && pnpm dev`
 - Build: `pnpm build`
 - Deploy: `git push origin main` (auto-deploys to R2 via GitHub Actions)

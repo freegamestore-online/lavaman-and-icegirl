@@ -3,7 +3,7 @@ import { TextureGenerator } from "../utils/TextureGenerator";
 import { LevelManager } from "../Game/LevelManager";
 import { UIManager } from "../Game/UIManager";
 import { CollisionManager } from "../Game/CollisionManager";
-import { getScaleFactor } from "../levels"; // already exported, aliases getUniformScale()
+import { getScaleFactor } from "../levels";
 
 
 const getSounds = () => (window as any).__gameSounds;
@@ -52,9 +52,9 @@ export class FireAndWaterScene extends Phaser.Scene {
   create() {
 
     const { width, height } = this.scale;
-      import("../levels").then(({ setScaleFactor }) => {
-        setScaleFactor(width, height);
-      });
+    import("../levels").then(({ setScaleFactor }) => {
+      setScaleFactor(width, height);
+    });
     const sounds = getSounds();
     if (sounds) sounds.playMove();
 
@@ -143,7 +143,7 @@ export class FireAndWaterScene extends Phaser.Scene {
       this.watergirl,
       this.levelManager.platforms,
       this.levelManager.hazards,
-      this.levelManager.goals,
+      this.levelManager.goalPlatforms,
       this.levelManager.gems
     );
 
@@ -154,7 +154,6 @@ export class FireAndWaterScene extends Phaser.Scene {
     );
   }
 
-  // In FireAndWaterScene.ts, update the collectGem method:
   private collectGem(gem: Phaser.GameObjects.GameObject) {
     if (gem.getData("collected")) return;
     gem.setData("collected", true);
@@ -162,7 +161,7 @@ export class FireAndWaterScene extends Phaser.Scene {
     const sounds = getSounds();
     if (sounds) sounds.playScore();
     this.score++;
-    this.uiManager.updateScore(this.score); // Add this line to update UI
+    this.uiManager.updateScore(this.score);
     this.cameras.main.shake(60, 0.006);
   }
 
@@ -184,46 +183,133 @@ export class FireAndWaterScene extends Phaser.Scene {
 
   private handleGoal(player: "fire" | "water", goalType: string) {
     if (this.gameOver) return;
+    if (player === "fire" && goalType !== "fire") return;
+    if (player === "water" && goalType !== "water") return;
+  }
 
-    if (player === "fire" && goalType === "fire" && !this.fireAtGoal) {
-      this.fireAtGoal = true;
+  private updateGoalState() {
+    const wasFireAtGoal = this.fireAtGoal;
+    const wasWaterAtGoal = this.waterAtGoal;
+
+    this.fireAtGoal = this.isPlayerOnGoalPlatform(this.fireboy, "fire");
+    this.waterAtGoal = this.isPlayerOnGoalPlatform(this.watergirl, "water");
+
+    if (!wasFireAtGoal && this.fireAtGoal) {
       const sounds = getSounds();
       if (sounds) sounds.playLevelUp();
-      this.fireboy.setVelocity(0, 0);
-      (this.fireboy.body as Phaser.Physics.Arcade.Body).allowGravity = false;
-      this.fireboy.setAlpha(0.6);
       this.uiManager.setStatus("🔥 Ready! Waiting for 💧...", "#ffaa44");
     }
-
-    if (player === "water" && goalType === "water" && !this.waterAtGoal) {
-      this.waterAtGoal = true;
+    if (!wasWaterAtGoal && this.waterAtGoal) {
       const sounds = getSounds();
       if (sounds) sounds.playLevelUp();
-      this.watergirl.setVelocity(0, 0);
-      (this.watergirl.body as Phaser.Physics.Arcade.Body).allowGravity = false;
-      this.watergirl.setAlpha(0.6);
       this.uiManager.setStatus("💧 Ready! Waiting for 🔥...", "#44aaff");
+    }
+
+    if ((wasFireAtGoal && !this.fireAtGoal) || (wasWaterAtGoal && !this.waterAtGoal)) {
+      this.uiManager.setStatus("Stand on both goal ledges to continue", "#d7ecff");
     }
 
     this.uiManager.updateIndicators(this.fireAtGoal, this.waterAtGoal);
 
-    if (this.fireAtGoal && this.waterAtGoal) {
-      this.gameOver = true;
-      const nextLevel = this.currentLevel + 1;
-      const sounds = getSounds();
-      if (sounds) sounds.playGameOver();
+    if (!this.gameOver && this.fireAtGoal && this.waterAtGoal) {
+      this.completeLevel();
+    }
+  }
 
-      if (this.levelManager.hasNextLevel()) {
-        this.uiManager.setStatus("✨ Level complete!", "#44ff88");
-        this.flashScene(0x22cc66);
-        this.cameras.main.fadeOut(800, 0, 0, 0);
-        this.cameras.main.once("camerafadeoutcomplete", () => {
-          this.scene.restart({ level: nextLevel });
-        });
-      } else {
-        this.uiManager.setStatus("🏆 All levels cleared! Press R to replay.", "#ffee44");
-        this.flashScene(0x22cc66);
-      }
+  private isPlayerOnGoalPlatform(
+    player: Phaser.Physics.Arcade.Sprite,
+    goalType: "fire" | "water"
+  ): boolean {
+    const body = player.body as Phaser.Physics.Arcade.Body | null;
+    if (!body || !body.blocked.down) return false;
+
+    const goalPlatforms = this.levelManager.goalPlatforms.getChildren() as Phaser.Physics.Arcade.Image[];
+    const matchingPlatform = goalPlatforms.find(
+      (platform) => platform.getData("type") === goalType
+    );
+    if (!matchingPlatform) return false;
+
+    const platformBody = matchingPlatform.body as Phaser.Physics.Arcade.StaticBody | null;
+    if (!platformBody) return false;
+
+    const footY = body.bottom;
+    const topY = platformBody.top;
+    const feetNearTop = Math.abs(footY - topY) <= 6;
+    const overlapsHorizontally = body.right > platformBody.left + 2 && body.left < platformBody.right - 2;
+
+    return feetNearTop && overlapsHorizontally;
+  }
+
+  private completeLevel() {
+    this.gameOver = true;
+    const nextLevel = this.currentLevel + 1;
+    const sounds = getSounds();
+    if (sounds) sounds.playGameOver();
+
+    this.fireboy.setVelocity(0, 0);
+    this.watergirl.setVelocity(0, 0);
+    (this.fireboy.body as Phaser.Physics.Arcade.Body).allowGravity = false;
+    (this.watergirl.body as Phaser.Physics.Arcade.Body).allowGravity = false;
+
+    this.uiManager.setStatus("🚪 Exiting...", "#b6ffd7");
+
+    const fireGoal = this.getGoalByType("fire");
+    const waterGoal = this.getGoalByType("water");
+    const activeTweens: Phaser.Tweens.Tween[] = [];
+
+    if (fireGoal) {
+      activeTweens.push(
+        this.tweens.add({
+          targets: this.fireboy,
+          x: fireGoal.x,
+          y: fireGoal.y + fireGoal.displayHeight * 0.2,
+          scaleX: this.fireboy.scaleX * 0.35,
+          scaleY: this.fireboy.scaleY * 0.35,
+          alpha: 0.25,
+          duration: 420,
+          ease: "Sine.In",
+        })
+      );
+    }
+
+    if (waterGoal) {
+      activeTweens.push(
+        this.tweens.add({
+          targets: this.watergirl,
+          x: waterGoal.x,
+          y: waterGoal.y + waterGoal.displayHeight * 0.2,
+          scaleX: this.watergirl.scaleX * 0.35,
+          scaleY: this.watergirl.scaleY * 0.35,
+          alpha: 0.25,
+          duration: 420,
+          ease: "Sine.In",
+        })
+      );
+    }
+
+    this.time.delayedCall(activeTweens.length > 0 ? 460 : 0, () => {
+      this.finishLevelTransition(nextLevel);
+    });
+  }
+
+  private getGoalByType(goalType: "fire" | "water") {
+    const goals = this.levelManager.goals.getChildren() as Phaser.Physics.Arcade.Image[];
+    return goals.find((goal) => goal.getData("type") === goalType);
+  }
+
+  private finishLevelTransition(nextLevel: number) {
+    if (!this.gameOver) return;
+
+    if (this.levelManager.hasNextLevel()) {
+      this.uiManager.setStatus("✨ Level complete!", "#44ff88");
+      this.flashScene(0x22cc66);
+      this.cameras.main.fadeOut(800, 0, 0, 0);
+      this.cameras.main.once("camerafadeoutcomplete", () => {
+        this.scene.restart({ level: nextLevel });
+      });
+    } else {
+      this.uiManager.setStatus("🏆 All levels cleared! Press R to replay.", "#ffee44");
+      this.flashScene(0x22cc66);
     }
   }
 
@@ -286,15 +372,17 @@ export class FireAndWaterScene extends Phaser.Scene {
       }
     }
 
-    if (!this.fireAtGoal) this.movePlayer(this.fireboy, fireControls);
-    if (!this.waterAtGoal) this.movePlayer(this.watergirl, waterControls);
+    this.movePlayer(this.fireboy, fireControls);
+    this.movePlayer(this.watergirl, waterControls);
+
+    this.updateGoalState();
 
     const t = this.time.now / 300;
-    if (!this.fireAtGoal && (this.fireboy.body as Phaser.Physics.Arcade.Body).blocked.down &&
+    if ((this.fireboy.body as Phaser.Physics.Arcade.Body).blocked.down &&
         !fireControls.left && !fireControls.right) {
       this.fireboy.y += Math.sin(t) * 0.3;
     }
-    if (!this.waterAtGoal && (this.watergirl.body as Phaser.Physics.Arcade.Body).blocked.down &&
+    if ((this.watergirl.body as Phaser.Physics.Arcade.Body).blocked.down &&
         !waterControls.left && !waterControls.right) {
       this.watergirl.y += Math.sin(t + 1) * 0.3;
     }

@@ -7,6 +7,7 @@ export class LevelManager {
   public platforms!: Phaser.Physics.Arcade.StaticGroup;
   public hazards!: Phaser.Physics.Arcade.StaticGroup;
   public goals!: Phaser.Physics.Arcade.StaticGroup;
+  public goalPlatforms!: Phaser.Physics.Arcade.StaticGroup;
   public gems!: Phaser.Physics.Arcade.StaticGroup;
   public fireStart!: { x: number; y: number };
   public waterStart!: { x: number; y: number };
@@ -27,6 +28,7 @@ export class LevelManager {
     this.platforms = this.scene.physics.add.staticGroup();
     this.hazards = this.scene.physics.add.staticGroup();
     this.goals = this.scene.physics.add.staticGroup();
+    this.goalPlatforms = this.scene.physics.add.staticGroup();
     this.gems = this.scene.physics.add.staticGroup();
 
     this.resolvedLevel.platforms.forEach((p) => {
@@ -51,6 +53,14 @@ export class LevelManager {
       const b = this.goals.create(gl.x, gl.y, tex) as Phaser.Physics.Arcade.Image;
       b.setDisplaySize(gl.width, gl.height).setOrigin(0.5).refreshBody();
       b.setData("type", gl.type);
+
+      const ledgeWidth = Math.max(gl.width * 1.35, 38);
+      const ledgeHeight = 8;
+      const ledgeY = gl.y + gl.height / 2 + ledgeHeight / 2;
+      const ledge = this.goalPlatforms.create(gl.x, ledgeY, "platform") as Phaser.Physics.Arcade.Image;
+      ledge.setDisplaySize(ledgeWidth, ledgeHeight).setOrigin(0.5).refreshBody();
+      ledge.setData("type", gl.type);
+      ledge.setAlpha(0.95);
     });
 
     this.resolvedLevel.gems.forEach((gm) => {
