@@ -1,14 +1,14 @@
 {
-  "name": "APPNAME",
+  "name": "lavaman-and-icegirl",
   "private": true,
   "packageManager": "pnpm@10.30.3",
   "engines": { "node": ">=22" },
   "pnpm": { "onlyBuiltDependencies": ["esbuild"] },
   "scripts": {
-    "dev": "pnpm --filter @APPNAME/web dev",
-    "build": "pnpm --filter @APPNAME/web build",
-    "preview": "pnpm --filter @APPNAME/web preview",
-    "typecheck": "pnpm --filter @APPNAME/web exec tsc -b",
-    "test": "pnpm --filter @APPNAME/web test"
+    "dev": "pnpm --filter @lavaman-and-icegirl/web dev",
+    "build": "pnpm --filter @lavaman-and-icegirl/web build",
+    "preview": "pnpm --filter @lavaman-and-icegirl/web preview",
+    "typecheck": "pnpm --filter @lavaman-and-icegirl/web exec tsc -b",
+    "test": "pnpm --filter @lavaman-and-icegirl/web test"
   }
 }
