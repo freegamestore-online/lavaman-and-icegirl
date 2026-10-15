@@ -4,56 +4,55 @@ export class TextureGenerator {
   static generateAll(scene: Phaser.Scene) {
     const g = scene.add.graphics();
 
-    // ── FIREBOY (28×36) ──────────────────────────────────────────────────
-    g.fillStyle(0xdd3311, 1);
-    g.fillRect(5, 12, 18, 18);
-    g.fillStyle(0xaa2200, 1);
-    g.fillRect(5, 28, 7, 8);
-    g.fillRect(16, 28, 7, 8);
-    g.fillStyle(0xdd3311, 1);
-    g.fillRect(1, 14, 5, 10);
-    g.fillRect(22, 14, 5, 10);
-    g.fillStyle(0xff6644, 1);
-    g.fillCircle(14, 8, 9);
-    g.fillStyle(0xffcc00, 1);
-    g.fillTriangle(6, 5, 10, -3, 13, 4);
-    g.fillTriangle(12, 2, 15, -6, 18, 2);
-    g.fillTriangle(17, 4, 21, -2, 24, 5);
+    // ── FIRE HERO (28×36) — flame-shaped body with a glowing core ────────
+    // Outer flame silhouette
+    g.fillStyle(0xff5500, 1);
+    g.fillTriangle(14, 1, 3, 30, 25, 30);
+    g.fillTriangle(6, 14, 1, 26, 10, 26);
+    g.fillTriangle(22, 14, 27, 26, 18, 26);
+    // Flickering tips
+    g.fillStyle(0xffb000, 1);
+    g.fillTriangle(8, 10, 11, 0, 14, 10);
+    g.fillTriangle(15, 9, 18, -1, 21, 9);
+    // Hot yellow core
+    g.fillStyle(0xffe066, 1);
+    g.fillTriangle(14, 12, 8, 30, 20, 30);
+    // Feet
+    g.fillStyle(0x661a00, 1);
+    g.fillRect(7, 31, 5, 5);
+    g.fillRect(16, 31, 5, 5);
+    // Eyes
     g.fillStyle(0xffffff, 1);
-    g.fillCircle(9, 7, 3);
-    g.fillCircle(19, 7, 3);
-    g.fillStyle(0x000000, 1);
-    g.fillCircle(10, 7, 1.5);
-    g.fillCircle(20, 7, 1.5);
-    g.fillStyle(0xffffff, 1);
-    g.fillRect(9, 5, 1.5, 1.5);
-    g.fillRect(19, 5, 1.5, 1.5);
+    g.fillCircle(11, 20, 2.5);
+    g.fillCircle(17, 20, 2.5);
+    g.fillStyle(0x220000, 1);
+    g.fillCircle(11.5, 20.5, 1.2);
+    g.fillCircle(17.5, 20.5, 1.2);
     g.generateTexture("fireboy", 28, 36);
     g.clear();
 
-    // ── WATERGIRL (28×36) ────────────────────────────────────────────────
-    g.fillStyle(0x2288cc, 1);
-    g.fillRect(5, 12, 18, 18);
-    g.fillStyle(0x1166aa, 1);
-    g.fillTriangle(4, 28, 14, 22, 24, 28);
-    g.fillRect(6, 28, 7, 8);
-    g.fillRect(15, 28, 7, 8);
-    g.fillStyle(0x2288cc, 1);
-    g.fillRect(1, 14, 5, 10);
-    g.fillRect(22, 14, 5, 10);
-    g.fillStyle(0x55bbee, 1);
-    g.fillCircle(14, 8, 9);
-    g.fillStyle(0x88ddff, 1);
-    g.fillTriangle(8, 0, 14, 10, 20, 0);
+    // ── ICE HEROINE (28×36) — faceted crystal body with frosted crown ────
+    // Crystal body: two facets
+    g.fillStyle(0x9be7ff, 1);
+    g.fillTriangle(14, 6, 3, 18, 14, 34);
+    g.fillStyle(0xd6f7ff, 1);
+    g.fillTriangle(14, 6, 25, 18, 14, 34);
+    // Frost crown
     g.fillStyle(0xffffff, 1);
-    g.fillCircle(9, 7, 3);
-    g.fillCircle(19, 7, 3);
-    g.fillStyle(0x004488, 1);
-    g.fillCircle(10, 7, 1.5);
-    g.fillCircle(20, 7, 1.5);
+    g.fillTriangle(5, 8, 8, 0, 11, 8);
+    g.fillTriangle(11, 6, 14, -2, 17, 6);
+    g.fillTriangle(17, 8, 20, 0, 23, 8);
+    // Frozen feet
+    g.fillStyle(0x2f7fa8, 1);
+    g.fillRect(8, 33, 4, 3);
+    g.fillRect(16, 33, 4, 3);
+    // Eyes
+    g.fillStyle(0x0d2a44, 1);
+    g.fillCircle(11, 19, 2);
+    g.fillCircle(17, 19, 2);
     g.fillStyle(0xffffff, 1);
-    g.fillRect(9, 5, 1.5, 1.5);
-    g.fillRect(19, 5, 1.5, 1.5);
+    g.fillRect(10, 18, 1, 1);
+    g.fillRect(16, 18, 1, 1);
     g.generateTexture("watergirl", 28, 36);
     g.clear();
 

@@ -35,9 +35,9 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: "lavaman-and-icegirl",
-        short_name: "lavaman-and-icegirl",
-        description: "lavaman-and-icegirl - free forever",
+        name: "Fire & Ice Duo",
+        short_name: "Fire & Ice Duo",
+        description: "Fire & Ice Duo – free forever",
         start_url: "/",
         display: "standalone",
         background_color: "#0f0f0f",

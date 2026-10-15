@@ -1,6 +1,7 @@
 // MenuScene.ts — Properly centered for portrait mode
 import Phaser from "phaser";
 import { levelDefs } from "../levels";
+import { GAME_TITLE } from "../branding";
 
 const getSounds = () => (window as any).__gameSounds;
 
@@ -31,7 +32,7 @@ export class MenuScene extends Phaser.Scene {
 
     // Title - positioned relative to screen height
     const titleY = height * 0.08;
-    this.add.text(cx, titleY, "🔥 FIRE & WATER 💧", {
+    this.add.text(cx, titleY, `🔥 ${GAME_TITLE} ❄️`, {
       fontSize: Math.min(height * 0.045, 32),
       color: "#ffffff",
       fontStyle: "bold",
@@ -62,7 +63,7 @@ export class MenuScene extends Phaser.Scene {
       fontFamily: "Manrope, system-ui, sans-serif",
     }).setOrigin(0.5);
 
-    this.add.text(cx + legendWidth * 0.23, legendY + legendHeight * 0.35, "💧 Arrows", {
+    this.add.text(cx + legendWidth * 0.23, legendY + legendHeight * 0.35, "❄️ Arrows", {
       fontSize: Math.min(height * 0.02, 13),
       color: "#66ccff",
       resolution: 2,

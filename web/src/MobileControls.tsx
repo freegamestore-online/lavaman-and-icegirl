@@ -85,17 +85,17 @@ export function MobileControls({
             border-2 border-white/30 shadow-lg active:scale-95 text-base font-bold
             hover:scale-105 transition-all touch-none select-none min-w-[64px]`}
         >
-          {activeCharacter === 'fire' ? '🔥' : '💧'}
+          {activeCharacter === 'fire' ? '🔥' : '❄️'}
         </button>
         <div className="text-white/70 text-[11px] font-bold uppercase tracking-wider">
-          {activeCharacter === 'fire' ? 'Controlling Fire' : 'Controlling Water'}
+          {activeCharacter === 'fire' ? 'Controlling Fire' : 'Controlling Ice'}
         </div>
       </div>
 
       {/* Control Pad — top-left, arrows centered, up arrow raised */}
       <div className="flex flex-col items-center gap-1">
         <div className="text-white/50 text-[11px] font-bold uppercase tracking-wider mb-1">
-          {activeCharacter === 'fire' ? '🔥 Fire' : '💧 Water'}
+          {activeCharacter === 'fire' ? '🔥 Fire' : '❄️ Ice'}
         </div>
         <div className="grid grid-cols-3 grid-rows-2 gap-2 w-[160px] place-items-center">
           {/* Jump — centered on top row, spans middle column */}

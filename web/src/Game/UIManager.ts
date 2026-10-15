@@ -67,7 +67,7 @@ export class UIManager {
 
     // Controls hint
     this.statusText = this.scene.add
-      .text(12, 28, "WASD=🔥  Arrows=💧  R=Restart  ESC=Pause", {
+      .text(12, 28, "WASD=🔥  Arrows=❄️  R=Restart  ESC=Pause", {
         fontSize: "9px",
         color: "#a0b8cc",
         resolution: 2,
@@ -106,7 +106,7 @@ export class UIManager {
 
     // Water indicator
     this.waterIndicator = this.scene.add
-      .text(W / 2 + 20, H - 24, "💧 Moving", {
+      .text(W / 2 + 20, H - 24, "❄️ Moving", {
         fontSize: "11px",
         color: "#66ccff",
         resolution: 2,
@@ -180,7 +180,7 @@ export class UIManager {
       this.fireIndicator.setText(fireAtGoal ? "🔥 At goal ✓" : "🔥 Moving");
     }
     if (this.waterIndicator) {
-      this.waterIndicator.setText(waterAtGoal ? "💧 At goal ✓" : "💧 Moving");
+      this.waterIndicator.setText(waterAtGoal ? "❄️ At goal ✓" : "❄️ Moving");
     }
   }
 
